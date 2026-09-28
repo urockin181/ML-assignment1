@@ -1,0 +1,12 @@
+Cumulative Offers =
+VAR CurrentWave =
+    VALUE ( SUBSTITUTE ( MAX ( Waves[Wave] ), "Wave ", "" ) )
+RETURN
+    CALCULATE (
+        COUNTROWS ( Offers ),
+        REMOVEFILTERS ( Waves ),
+        FILTER (
+            ALL ( Offers[Wave] ),
+            IFERROR ( VALUE ( SUBSTITUTE ( Offers[Wave], "Wave ", "" ) ), 999 ) <= CurrentWave
+        )
+    )
