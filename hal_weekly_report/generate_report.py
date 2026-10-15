@@ -213,7 +213,9 @@ def wave_file_changed(wave_path):
     """True if wave_path's modification time differs from the last time
     this script checked it (persisted in WAVE_STATE_PATH); always records
     the current mtime for next time, either way. A first-ever check (no
-    prior recorded state) counts as changed."""
+    prior recorded state) just establishes that baseline and reports no
+    change -- an old, untouched file shouldn't trigger the Wave slides
+    just because this is the first time its mtime was recorded."""
     current_mtime = wave_path.stat().st_mtime
     previous_mtime = None
     if WAVE_STATE_PATH.exists():
@@ -222,7 +224,7 @@ def wave_file_changed(wave_path):
         except (json.JSONDecodeError, OSError):
             previous_mtime = None
     WAVE_STATE_PATH.write_text(json.dumps({"mtime": current_mtime}))
-    return previous_mtime is None or current_mtime != previous_mtime
+    return previous_mtime is not None and current_mtime != previous_mtime
 
 
 def load_calls(csv_path, start_date, end_date, queues=None):
