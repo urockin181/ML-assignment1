@@ -253,8 +253,17 @@ def load_calls(csv_path, start_date, end_date, queues=None):
     return df
 
 
-def load_apps(xlsx_path):
+def load_apps(xlsx_path, start_date=None, end_date=None, date_column="Opened"):
+    """Top TOP_N_APPS "Primary Configuration Item" counts. If start_date/
+    end_date are given, only rows whose `date_column` falls within that
+    range (inclusive) are counted -- used for the Wave file, which
+    accumulates tickets across many weeks rather than being a single
+    week's export like the main tickets Excel file."""
     df = pd.read_excel(xlsx_path)
+    if start_date is not None and end_date is not None:
+        dates = pd.to_datetime(df[date_column], errors="coerce")
+        end_of_day = end_date + pd.Timedelta(hours=23, minutes=59, seconds=59)
+        df = df[(dates >= start_date) & (dates <= end_of_day)]
     items = df["Primary Configuration Item"].dropna().astype(str)
     items = items.apply(lambda s: re.sub(r"[​‌‍﻿]", "", s).strip())
     items = items[items != ""]
@@ -1284,7 +1293,7 @@ def main():
     elif wave_file_changed(wave_path):
         print(f"Wave file changed ({wave_path}); adding the Wave slides.")
         wave_calls = load_calls(csv_path, start_date, end_date, queues=[WAVE_QUEUE])
-        wave_apps = load_apps(wave_path)
+        wave_apps = load_apps(wave_path, start_date, end_date, date_column="Created")
     else:
         print(f"Wave file unchanged since the last run ({wave_path}); skipping the Wave slides.")
 
