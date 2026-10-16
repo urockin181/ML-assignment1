@@ -1,0 +1,71 @@
+table Quality
+	lineageTag: a866b194-2256-5c02-965e-5eeafec0ddec
+
+	column 'Audit Id'
+		dataType: int64
+		formatString: 0
+		lineageTag: 06561049-84fb-5307-99ff-4a5f0b18bc89
+		summarizeBy: sum
+		sourceColumn: Audit Id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Contact Type'
+		dataType: string
+		lineageTag: f4d8e508-d9cc-5b06-b759-5e323b6ad747
+		summarizeBy: none
+		sourceColumn: Contact Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Ticket Number'
+		dataType: string
+		lineageTag: d7b8f2ed-383b-5daf-b52f-5956c3d2d621
+		summarizeBy: none
+		sourceColumn: Ticket Number
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: de61301c-8b96-5fa1-b7b2-476952f66059
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Agents
+		dataType: string
+		lineageTag: 07d261ce-6f9e-5c87-91f6-8604e330b0dc
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Score'
+		dataType: double
+		lineageTag: efdc2d8b-8ae6-5284-a46c-629e9816edfd
+		summarizeBy: sum
+		sourceColumn: Total Score
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition Quality = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Quality", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Audit Id", Int64.Type}, {"Contact Type", type text}, {"Ticket Number", type text}, {"Date", type date}, {"Agents", type text}, {"Total Score", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

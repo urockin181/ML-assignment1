@@ -1,0 +1,42 @@
+model Model
+	culture: en-US
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	sourceQueryCulture: en-US
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+queryGroup Parameters
+
+	annotation PBI_QueryGroupOrder = 0
+
+annotation __PBI_TimeIntelligenceEnabled = 1
+
+annotation PBI_QueryOrder = ["DataFile","Metrics","Agents","Genesys","Genesys_Abandoned","FCR_L2","FCR_Team","CSAT","Quality","Adherence","Status","Break","Schedule","IM","KM","DailyCheck","Date","Tasks Resolved by SD","Incidents Resolved by SD","Chat-Closed-Complete","Chat-Time-Out"]
+
+annotation PBI_ProTooling = ["DevMode"]
+
+ref table Metrics
+ref table Agents
+ref table Genesys
+ref table Genesys_Abandoned
+ref table FCR_L2
+ref table FCR_Team
+ref table CSAT
+ref table Quality
+ref table Adherence
+ref table Status
+ref table Break
+ref table Schedule
+ref table IM
+ref table KM
+ref table DailyCheck
+ref table Date
+ref table 'Tasks Resolved by SD'
+ref table 'Incidents Resolved by SD'
+ref table 'Chat-Closed-Complete'
+ref table 'Chat-Time-Out'
+ref table 'LocalDateTable_af6ced73-30cb-4078-8a3b-80e5b8498b8e'
+ref table 'DateTableTemplate_d48f112c-395c-4799-a12a-7ec661728f9a'
+
+ref cultureInfo en-US

@@ -1,0 +1,7 @@
+# Power BI Desktop local files
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+# Excel lock files
+~$*
+# Python
+__pycache__/

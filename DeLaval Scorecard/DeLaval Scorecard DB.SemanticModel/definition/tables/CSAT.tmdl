@@ -1,0 +1,77 @@
+table CSAT
+	lineageTag: bfc520f6-237a-5948-b9f4-130a6f5a9bee
+
+	column Instance
+		dataType: string
+		lineageTag: 48b079eb-4c02-5606-af35-1494bbe283da
+		summarizeBy: none
+		sourceColumn: Instance
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Instance.Task_ID'
+		dataType: string
+		lineageTag: fd6bf847-6966-5b2d-9e98-73dc1e4d9ce2
+		summarizeBy: none
+		sourceColumn: Instance.Task_ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 19dff373-7c79-5553-b7ff-f922531f9ec6
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Agents
+		dataType: string
+		lineageTag: 4cb3fa98-a002-53fc-a0a1-d5d71313ddc1
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'String Score'
+		dataType: string
+		lineageTag: 30ad6e8f-6d21-5b7e-882c-01cd73d61587
+		summarizeBy: none
+		sourceColumn: String Score
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Numerical Score'
+		dataType: int64
+		formatString: 0
+		lineageTag: dae44dd5-84d4-502e-93df-ad4ec012c16a
+		summarizeBy: sum
+		sourceColumn: Numerical Score
+
+		annotation SummarizationSetBy = Automatic
+
+	column Score
+		dataType: string
+		lineageTag: 09fe44b7-bc1d-5fb3-a916-8e093c355103
+		summarizeBy: none
+		sourceColumn: Score
+
+		annotation SummarizationSetBy = Automatic
+
+	partition CSAT = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "CSAT", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Instance", type text}, {"Instance.Task_ID", type text}, {"Date", type date}, {"Agents", type text}, {"String Score", type text}, {"Numerical Score", Int64.Type}, {"Score", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

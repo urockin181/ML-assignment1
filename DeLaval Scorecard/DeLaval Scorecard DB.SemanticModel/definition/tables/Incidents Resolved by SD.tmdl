@@ -1,0 +1,231 @@
+table 'Incidents Resolved by SD'
+	lineageTag: c18a70d2-7d9f-593b-b673-9058dfc177d6
+
+	column number
+		dataType: string
+		lineageTag: a92e7169-cb08-57a3-974d-1f33c142e44e
+		summarizeBy: none
+		sourceColumn: number
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 17d0975d-e472-5c47-bfb0-ac12b015773e
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Agents
+		dataType: string
+		lineageTag: 9f3534d2-3e1e-5408-aa1a-cb8f086b8314
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column short_description
+		dataType: string
+		lineageTag: 5e8430eb-32e5-56af-80f6-9866813d189b
+		summarizeBy: none
+		sourceColumn: short_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column caller_id
+		dataType: string
+		lineageTag: 1f2e59ed-48c7-5a30-a453-6febc6220087
+		summarizeBy: none
+		sourceColumn: caller_id
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'caller_id.location.country'
+		dataType: string
+		lineageTag: 1224130e-901e-527b-8b1e-1f3c18d088cb
+		summarizeBy: none
+		sourceColumn: caller_id.location.country
+
+		annotation SummarizationSetBy = Automatic
+
+	column priority
+		dataType: string
+		lineageTag: c0ca5ed0-95de-56e0-ad29-9eaac33e2614
+		summarizeBy: none
+		sourceColumn: priority
+
+		annotation SummarizationSetBy = Automatic
+
+	column state
+		dataType: string
+		lineageTag: e5f93910-0b09-5733-8787-d6c287b055c9
+		summarizeBy: none
+		sourceColumn: state
+
+		annotation SummarizationSetBy = Automatic
+
+	column category
+		dataType: string
+		lineageTag: 9adf29b4-b4a3-5c65-a6fb-83dad19d405a
+		summarizeBy: none
+		sourceColumn: category
+
+		annotation SummarizationSetBy = Automatic
+
+	column subcategory
+		dataType: string
+		lineageTag: f98d4d48-0366-5f4e-8a4a-a5ae0f376074
+		summarizeBy: none
+		sourceColumn: subcategory
+
+		annotation SummarizationSetBy = Automatic
+
+	column business_service
+		dataType: string
+		lineageTag: 6ad45090-70f4-5f17-868a-83788f26e579
+		summarizeBy: none
+		sourceColumn: business_service
+
+		annotation SummarizationSetBy = Automatic
+
+	column assignment_group
+		dataType: string
+		lineageTag: e26e3881-f751-5b23-9b9c-4f89e3138f9f
+		summarizeBy: none
+		sourceColumn: assignment_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column contact_type
+		dataType: string
+		lineageTag: afaa1919-c692-5742-913b-ccfc3570efb1
+		summarizeBy: none
+		sourceColumn: contact_type
+
+		annotation SummarizationSetBy = Automatic
+
+	column reassignment_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 1bfa61fb-a8ca-5884-9714-fafa056e791d
+		summarizeBy: sum
+		sourceColumn: reassignment_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column reopen_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 5366f8fd-a1e5-592c-ac19-1170b3d2c442
+		summarizeBy: sum
+		sourceColumn: reopen_count
+
+		annotation SummarizationSetBy = Automatic
+
+	column close_code
+		dataType: string
+		lineageTag: 2d2b9793-eb1a-515a-be70-74d543e2f672
+		summarizeBy: none
+		sourceColumn: close_code
+
+		annotation SummarizationSetBy = Automatic
+
+	column cmdb_ci
+		dataType: string
+		lineageTag: 2fcff7a2-b5df-59e6-b6aa-c30d8eb0e0d1
+		summarizeBy: none
+		sourceColumn: cmdb_ci
+
+		annotation SummarizationSetBy = Automatic
+
+	column u_rpt_mttr
+		dataType: int64
+		formatString: 0
+		lineageTag: 7219dfd4-ba41-5ce3-8eff-146f0ab9f9b4
+		summarizeBy: sum
+		sourceColumn: u_rpt_mttr
+
+		annotation SummarizationSetBy = Automatic
+
+	column opened_by
+		dataType: string
+		lineageTag: 6ac0a464-f2e3-50b8-a41b-c775cc21cd57
+		summarizeBy: none
+		sourceColumn: opened_by
+
+		annotation SummarizationSetBy = Automatic
+
+	column incident_state
+		dataType: string
+		lineageTag: d93461e4-3bdd-5fdc-8d54-73edcbec5be2
+		summarizeBy: none
+		sourceColumn: incident_state
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.cat_item'
+		dataType: string
+		lineageTag: d624fa22-a223-5656-8596-39b45b84ebdd
+		summarizeBy: none
+		sourceColumn: request_item.cat_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column request_item
+		dataType: string
+		lineageTag: b3a3800d-1625-5847-8a11-49a49136080b
+		summarizeBy: none
+		sourceColumn: request_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.u_request_on_behalf_of'
+		dataType: string
+		lineageTag: 4d517bae-abf3-5bee-8fa4-3521a3e3b615
+		summarizeBy: none
+		sourceColumn: request_item.u_request_on_behalf_of
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.requested_for'
+		dataType: string
+		lineageTag: 39af2e75-1493-591c-8b63-ff296bdc0a0a
+		summarizeBy: none
+		sourceColumn: request_item.requested_for
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.requested_for.location'
+		dataType: string
+		lineageTag: 8cc8b569-6d66-59f8-ba8e-5134fc7b3c52
+		summarizeBy: none
+		sourceColumn: request_item.requested_for.location
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'assignment_group.manager'
+		dataType: string
+		lineageTag: 11abd969-de7a-5c3c-805e-be5436285e47
+		summarizeBy: none
+		sourceColumn: assignment_group.manager
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Incidents Resolved by SD' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Incidents Resolved by SD", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"number", type text}, {"Date", type date}, {"Agents", type text}, {"short_description", type text}, {"caller_id", type text}, {"caller_id.location.country", type text}, {"priority", type text}, {"state", type text}, {"category", type text}, {"subcategory", type text}, {"business_service", type text}, {"assignment_group", type text}, {"contact_type", type text}, {"reassignment_count", Int64.Type}, {"reopen_count", Int64.Type}, {"close_code", type text}, {"cmdb_ci", type text}, {"u_rpt_mttr", Int64.Type}, {"opened_by", type text}, {"incident_state", type text}, {"request_item.cat_item", type text}, {"request_item", type text}, {"request_item.u_request_on_behalf_of", type text}, {"request_item.requested_for", type text}, {"request_item.requested_for.location", type text}, {"assignment_group.manager", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

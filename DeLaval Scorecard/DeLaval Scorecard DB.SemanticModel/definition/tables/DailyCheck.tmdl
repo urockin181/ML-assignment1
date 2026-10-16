@@ -1,0 +1,68 @@
+table DailyCheck
+	lineageTag: 08e0d8b8-abbd-516e-aae5-2de5d26e2c63
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 8941adcb-6b0b-5c8b-9dba-263e2b7f0765
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Employee Name'
+		dataType: string
+		lineageTag: b0296af0-7779-5ebf-90f3-71dadc5f356e
+		summarizeBy: none
+		sourceColumn: Employee Name
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Required On-Site'
+		dataType: string
+		lineageTag: 6f4b3f25-be47-50e5-9517-a2a20a239b1d
+		summarizeBy: none
+		sourceColumn: Required On-Site
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Manager Review'
+		dataType: string
+		lineageTag: 32874cd3-2eda-53d2-8251-597775ee83ce
+		summarizeBy: none
+		sourceColumn: Manager Review
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Exception?'
+		dataType: string
+		lineageTag: 7dfcc936-7431-5eba-bcb4-aea5d61b9c17
+		summarizeBy: none
+		sourceColumn: Exception?
+
+		annotation SummarizationSetBy = Automatic
+
+	column Alert
+		dataType: string
+		lineageTag: 6a8e6113-2557-56d1-a29d-b558680c988a
+		summarizeBy: none
+		sourceColumn: Alert
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DailyCheck = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "DailyCheck", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Date", type date}, {"Employee Name", type text}, {"Required On-Site", type text}, {"Manager Review", type text}, {"Exception?", type text}, {"Alert", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

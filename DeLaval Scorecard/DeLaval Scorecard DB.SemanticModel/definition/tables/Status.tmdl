@@ -1,0 +1,102 @@
+table Status
+	lineageTag: 8781194e-938a-5c71-81b7-6adf3e28da68
+
+	column Agents
+		dataType: string
+		lineageTag: 2f5a5df9-0bd6-55c3-bfaa-d762ed0139fd
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: b3da0963-0d04-5365-bb77-55d22167e68d
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Start Time'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 9fe3b048-df9d-5fca-a965-74962ac26e8e
+		summarizeBy: none
+		sourceColumn: Start Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = DateTime
+
+	column 'End Time'
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 4dff4f90-623a-59f0-934c-c2a35bd625fa
+		summarizeBy: none
+		sourceColumn: End Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = DateTime
+
+	column 'Primary Status'
+		dataType: string
+		lineageTag: 86d8e1c6-abec-5a53-ab73-7313fd82003e
+		summarizeBy: none
+		sourceColumn: Primary Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column Duration
+		dataType: double
+		lineageTag: 92da055c-2f4c-5ba3-9f77-4e42892254b6
+		summarizeBy: sum
+		sourceColumn: Duration
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Duration String'
+		dataType: string
+		lineageTag: 66f5d7e8-2540-542d-b023-be01690b86cf
+		summarizeBy: none
+		sourceColumn: Duration String
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Hours'
+		dataType: double
+		lineageTag: ddff82cd-c8e1-57d4-89b5-8205456bd36b
+		summarizeBy: sum
+		sourceColumn: Total Hours
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Day Name'
+		dataType: string
+		lineageTag: 9559570a-e0e6-5b2f-873a-109393e34e19
+		summarizeBy: none
+		sourceColumn: Day Name
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Status = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Status", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Date", type date}, {"Start Time", type datetime}, {"End Time", type datetime}, {"Primary Status", type text}, {"Duration", type number}, {"Duration String", type text}, {"Total Hours", type number}, {"Day Name", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

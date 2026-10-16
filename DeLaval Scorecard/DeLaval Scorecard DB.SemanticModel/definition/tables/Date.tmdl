@@ -1,0 +1,35 @@
+table Date
+	lineageTag: 03b589dd-2d96-5524-8e5c-5484522dce81
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 1daea172-966b-53df-8192-217a1157ba0f
+		summarizeBy: none
+		sourceColumn: Date
+
+		variation Variation
+			isDefault
+			relationship: c2592742-36e2-4e40-a828-c4c220413f8f
+			defaultHierarchy: 'LocalDateTable_af6ced73-30cb-4078-8a3b-80e5b8498b8e'.'Date Hierarchy'
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Date = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    ReportMonth = Table.PromoteHeaders(Source{[Item = "ReportMonth", Kind = "Sheet"]}[Data], [PromoteAllScalars = true]),
+				    MonthStart = Date.From(ReportMonth{0}[Month Start]),
+				    StartDate = #date(Date.Year(MonthStart), 1, 1),
+				    EndDate = #date(Date.Year(MonthStart), 12, 31),
+				    DateList = List.Dates(StartDate, Duration.Days(EndDate - StartDate) + 1, #duration(1, 0, 0, 0)),
+				    DateTable = Table.FromList(DateList, Splitter.SplitByNothing(), {"Date"}),
+				    ChangedType = Table.TransformColumnTypes(DateTable, {{"Date", type date}})
+				in
+				    ChangedType
+
+	annotation PBI_ResultType = Table

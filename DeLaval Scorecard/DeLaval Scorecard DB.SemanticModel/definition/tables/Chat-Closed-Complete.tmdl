@@ -1,0 +1,76 @@
+table 'Chat-Closed-Complete'
+	lineageTag: 884d998b-b3e9-50be-bb58-a42321406201
+
+	column number
+		dataType: string
+		lineageTag: f68f6005-8d6f-5b19-b7ed-0896f1de0738
+		summarizeBy: none
+		sourceColumn: number
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 8c59fdf0-e9f7-581f-8f73-5f517f4c88cc
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column short_description
+		dataType: string
+		lineageTag: d8c6beba-4639-5d94-9f5b-f6aa4dc20f20
+		summarizeBy: none
+		sourceColumn: short_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column opened_for
+		dataType: string
+		lineageTag: f065da6c-4182-5f6c-a1b5-2894e127a32c
+		summarizeBy: none
+		sourceColumn: opened_for
+
+		annotation SummarizationSetBy = Automatic
+
+	column type
+		dataType: string
+		lineageTag: 4d1c87ce-445f-5df8-9e20-3dffa6bcf591
+		summarizeBy: none
+		sourceColumn: type
+
+		annotation SummarizationSetBy = Automatic
+
+	column state
+		dataType: string
+		lineageTag: 50de9917-f637-53c7-9481-21e802a441a1
+		summarizeBy: none
+		sourceColumn: state
+
+		annotation SummarizationSetBy = Automatic
+
+	column Agents
+		dataType: string
+		lineageTag: d604c2b9-26af-5548-aa60-467dae7f53a7
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Chat-Closed-Complete' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Chat-Closed-Complete", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"number", type text}, {"Date", type date}, {"short_description", type text}, {"opened_for", type text}, {"type", type text}, {"state", type text}, {"Agents", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

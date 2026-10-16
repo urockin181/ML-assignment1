@@ -1,0 +1,51 @@
+table FCR_Team
+	lineageTag: c55244bd-85b6-51d7-a30e-9a0cecf0ba3a
+
+	column 'Team FCR'
+		dataType: string
+		lineageTag: 1c095109-0203-5c71-8473-099e2752f2de
+		summarizeBy: none
+		sourceColumn: Team FCR
+
+		annotation SummarizationSetBy = Automatic
+
+	column Tasks
+		dataType: string
+		lineageTag: b6825a0c-cd78-5ad9-97f8-ef14c7ffc491
+		summarizeBy: none
+		sourceColumn: Tasks
+
+		annotation SummarizationSetBy = Automatic
+
+	column Incidents
+		dataType: string
+		lineageTag: a93f7767-b403-5fcc-83d1-bec4ed7d4b5e
+		summarizeBy: none
+		sourceColumn: Incidents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Column4
+		dataType: double
+		lineageTag: 8080441b-0b9a-5534-b35e-170ad593fc1c
+		summarizeBy: sum
+		sourceColumn: Column4
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	partition FCR_Team = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "FCR_Team", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Team FCR", type text}, {"Tasks", type text}, {"Incidents", type text}, {"Column4", type number}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

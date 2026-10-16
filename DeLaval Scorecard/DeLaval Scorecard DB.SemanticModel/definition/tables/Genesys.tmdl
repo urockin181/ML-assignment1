@@ -1,0 +1,231 @@
+table Genesys
+	lineageTag: baa40d22-d1d3-515c-9e86-09342bb01cd9
+
+	column 'Conversation ID'
+		dataType: string
+		lineageTag: a8615ec0-a768-55f0-8380-bd430693e7fa
+		summarizeBy: none
+		sourceColumn: Conversation ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 88e5b45c-1b55-5586-a7c8-6bc68d1fbb61
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Agents
+		dataType: string
+		lineageTag: 851b7882-0b7d-5100-aaba-bd8f2d07ac6d
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Users
+		dataType: string
+		lineageTag: 886bd337-001a-5678-b308-184c3ac23892
+		summarizeBy: none
+		sourceColumn: Users
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Users - Interacted'
+		dataType: string
+		lineageTag: afdff2a9-8dfd-5954-b9af-db0be1b2e4df
+		summarizeBy: none
+		sourceColumn: Users - Interacted
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Users - Alerted'
+		dataType: string
+		lineageTag: 0bb2c6f7-0178-5662-a004-8b0655b64ab2
+		summarizeBy: none
+		sourceColumn: Users - Alerted
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Users - Not Responding'
+		dataType: string
+		lineageTag: a441bb3f-df7b-5ed8-86b5-86b13c624243
+		summarizeBy: none
+		sourceColumn: Users - Not Responding
+
+		annotation SummarizationSetBy = Automatic
+
+	column Queue
+		dataType: string
+		lineageTag: 139a2e24-315d-5e05-a57d-3ed755f380d7
+		summarizeBy: none
+		sourceColumn: Queue
+
+		annotation SummarizationSetBy = Automatic
+
+	column Duration
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: fcee0209-2a38-5e8e-9a43-39821157895d
+		summarizeBy: none
+		sourceColumn: Duration
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column Direction
+		dataType: string
+		lineageTag: 8d063f1a-c834-5da7-b819-705e47755813
+		summarizeBy: none
+		sourceColumn: Direction
+
+		annotation SummarizationSetBy = Automatic
+
+	column Abandoned
+		dataType: string
+		lineageTag: 8e2d1ee1-6205-5859-8a53-181efd2dec90
+		summarizeBy: none
+		sourceColumn: Abandoned
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Time to Abandon'
+		dataType: string
+		lineageTag: 64751b4c-4b07-58fa-b10e-8c9407dde2d1
+		summarizeBy: none
+		sourceColumn: Time to Abandon
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Queue'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: 22a3d97e-0d84-510f-bcbd-f7cc1f8e9563
+		summarizeBy: none
+		sourceColumn: Total Queue
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Total Alert'
+		dataType: string
+		lineageTag: e5654fab-ac0f-5508-8857-7a4e826d1fc4
+		summarizeBy: none
+		sourceColumn: Total Alert
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Talk'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: df5625d2-5eab-53b8-b5f8-0f6631ff85d3
+		summarizeBy: none
+		sourceColumn: Total Talk
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Abandoned in Queue'
+		dataType: string
+		lineageTag: a638823c-5b3c-57b3-babd-effdb4538d5c
+		summarizeBy: none
+		sourceColumn: Abandoned in Queue
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Disconnect Type'
+		dataType: string
+		lineageTag: a81d0696-6cc1-577e-a880-363e749320ed
+		summarizeBy: none
+		sourceColumn: Disconnect Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Handle'
+		dataType: string
+		lineageTag: 77719a63-f4d2-5ffa-a6dd-348b083024ac
+		summarizeBy: none
+		sourceColumn: Total Handle
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Queue Seconds'
+		dataType: double
+		lineageTag: a6425321-e757-5f43-bca2-c44ce81e6657
+		summarizeBy: sum
+		sourceColumn: Total Queue Seconds
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Total Talk Hours'
+		dataType: int64
+		formatString: 0
+		lineageTag: 9633b1e6-f235-50d7-92ad-377d12cdf388
+		summarizeBy: sum
+		sourceColumn: Total Talk Hours
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Talk Minutes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 7b599109-aac3-583d-a79e-880c8255b71a
+		summarizeBy: sum
+		sourceColumn: Total Talk Minutes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Talk Seconds'
+		dataType: double
+		lineageTag: 85c4fd7c-7009-5a6c-af86-b48dc76fb57e
+		summarizeBy: sum
+		sourceColumn: Total Talk Seconds
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Total Talk Calculated'
+		dataType: double
+		lineageTag: 20242edc-4f0d-5ae9-ab0e-9f4310f614df
+		summarizeBy: sum
+		sourceColumn: Total Talk Calculated
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Total Queue Minutes'
+		dataType: int64
+		formatString: 0
+		lineageTag: bd2bbff8-b933-5a17-8933-2e022023cfcf
+		summarizeBy: sum
+		sourceColumn: Total Queue Minutes
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Genesys = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Genesys", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Conversation ID", type text}, {"Date", type date}, {"Agents", type text}, {"Users", type text}, {"Users - Interacted", type text}, {"Users - Alerted", type text}, {"Users - Not Responding", type text}, {"Queue", type text}, {"Duration", type time}, {"Direction", type text}, {"Abandoned", type text}, {"Time to Abandon", type text}, {"Total Queue", type time}, {"Total Alert", type text}, {"Total Talk", type time}, {"Abandoned in Queue", type text}, {"Disconnect Type", type text}, {"Total Handle", type text}, {"Total Queue Seconds", type number}, {"Total Talk Hours", Int64.Type}, {"Total Talk Minutes", Int64.Type}, {"Total Talk Seconds", type number}, {"Total Talk Calculated", type number}, {"Total Queue Minutes", Int64.Type}}),
+				    #"Empty Text" = Table.ReplaceValue(#"Changed Type", null, "", Replacer.ReplaceValue, {"Conversation ID", "Agents", "Users", "Users - Interacted", "Users - Alerted", "Users - Not Responding", "Queue", "Direction", "Abandoned", "Time to Abandon", "Total Alert", "Abandoned in Queue", "Disconnect Type", "Total Handle"})
+				in
+				    #"Empty Text"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

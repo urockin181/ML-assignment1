@@ -1,0 +1,47 @@
+table Schedule
+	lineageTag: 2f69ede3-0c66-5211-af41-96d58ec4515e
+
+	column Agents
+		dataType: string
+		lineageTag: ac8f85f4-43ff-554a-8512-4ef94068f224
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: a1a5006c-d92c-5ba2-82c1-52680e280a3b
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Shift
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: 2a9b6043-0bdd-55e4-8fbb-da3ebb52f463
+		summarizeBy: none
+		sourceColumn: Shift
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	partition Schedule = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Schedule", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Date", type date}, {"Shift", type time}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

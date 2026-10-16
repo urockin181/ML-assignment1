@@ -1,0 +1,592 @@
+table Metrics
+	lineageTag: d7e4ffe5-dbd5-5134-8160-6d1164bf2bfe
+
+	measure 'Abandoned Calls' =
+			CALCULATE(
+			    COUNTROWS(Genesys),
+			    Genesys[Abandoned] = "YES",
+			    NOT(ISBLANK(Genesys[Total Talk]))
+			)
+		formatString: 0
+		lineageTag: abdb8e04-e3a8-575b-a8dd-a93a4cc9abc6
+
+	measure 'Answered Calls' = [Total Calls] - [Not Answered]
+		formatString: 0
+		lineageTag: 8a9e2fa3-7684-5930-9cee-2e2f27f25a04
+
+	measure 'Total Calls' = COUNT(Genesys[Conversation ID]) - [Fast Abandoned Agents]
+		formatString: 0
+		lineageTag: 7078a03d-6360-5b64-b5fc-811a49aab1a3
+
+	measure 'AVG Speed Answer' = AVERAGE(Genesys[Total Queue Seconds])
+		lineageTag: f4afafd2-6720-5f2b-b5d5-899e442c1345
+
+	measure 'Answered within SLA' = [Total Calls] - [Answered out of SLA]
+		formatString: 0
+		lineageTag: 676cb2d2-046e-5e51-951e-0d8dde4a3c01
+
+	measure GoS =
+			IF(
+			    [Total Calls] = 0 || [Answered by Agent] = 0 || [Answered within SLA] = 0 ,
+			    BLANK(),
+			    [Answered within SLA] / [Total Calls]
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: bf8f3dc3-9791-5946-ac89-6ecdeaa360f7
+
+	measure 'Answered out of SLA' =
+			COALESCE(
+			    CALCULATE(
+			        COUNTROWS(Genesys),
+			        FILTER(
+			            Genesys,
+			            (Genesys[Total Queue Seconds] > 30 || Genesys[Total Queue Minutes] > 0) &&
+			            Genesys[Queue] = "GL DELAVAL EN" &&
+			            NOT ISBLANK(Genesys[Total Talk Calculated] &&
+			            Genesys[Abandoned] = "NO")
+			        )
+			    ),
+			    0
+			)
+		formatString: 0
+		lineageTag: 4bee5a66-a83e-5c89-8c90-d43cb6431ffa
+
+	measure 'AVG Talk' = AVERAGE(Genesys[Total Talk Calculated])
+		lineageTag: 23c3e763-9d1b-5bb3-8c3f-3d59c332c991
+
+	measure 'Abandoned Rate' =
+			IF(
+			    [Abandoned Calls] <> 0,
+			    DIVIDE([Abandoned Calls], [Total Calls]),
+			    0
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 21962a18-7601-59a9-bae6-7b517020222b
+
+	measure 'CSAT Percentage' =
+			IF(
+			    [CSAT Positive] <> 0,
+			    DIVIDE([CSAT Total]-[CSAT Negative], [CSAT Total], 0))
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 8a74e5cc-aa61-5985-be79-3e796378a359
+
+	measure 'Weight-Quality' =
+			SWITCH(
+			    TRUE(),
+			    ISBLANK(MAX('Quality'[Total Score])) || MAX('Quality'[Total Score]) = 0 || MAX('Quality'[Total Score]) >= 90, .20,
+			    MAX('Quality'[Total Score]) >= 85, .15,
+			    MAX('Quality'[Total Score]) >= 80, .10,
+			    MAX('Quality'[Total Score]) < 80, 0
+			)
+		formatString: 0%;-0%;0%
+		lineageTag: 945ed8f4-acdb-5d8a-a920-628b2a8276de
+
+	measure 'Weight-CSAT' =
+			VAR DefaultCSAT = IF(ISBLANK([CSAT Percentage]) || [CSAT Percentage] = 0, 0.80, [CSAT Percentage])
+			RETURN IF(DefaultCSAT >= 0.80, 0.20, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: 4d06ffc9-6558-565b-b9cd-76afd7ed0fb4
+
+	measure 'Weight-GoS' =
+			VAR DefaultGoS = IF(ISBLANK([GoS]) || [GoS] = 0, 0.80, [GoS])
+			RETURN IF(DefaultGoS >= 0.80, 0.20, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: 4a02a1b2-1adf-53f7-b34c-b0f8a79f146b
+
+	measure 'Weight-NotAnswering' = if([Not Answering Rate]<=.20, .20,0)
+		formatString: 0%;-0%;0%
+		lineageTag: e581e9e4-f3e6-51e0-8cde-f622f76cccb6
+
+	measure 'L1 Performance' = [Weight-NotAnswering] + [Weight-CSAT] + [Weight-GoS] + [Weight-Quality] + [Weight-OnTime]
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 9c00f5f2-2ccf-5d3b-bdfd-72f2ea0f5ee0
+
+	measure 'CSAT Positive' =
+			CALCULATE(
+			    COUNTROWS('CSAT'),
+			    'CSAT'[Score]= "Positive"
+			)
+		formatString: 0
+		lineageTag: b9574b3d-4e9a-5599-98c9-1ece1aeb2452
+
+	measure 'CSAT Total' = (COUNT('CSAT'[Score])) - [CSAT Not Valid]
+		formatString: 0
+		lineageTag: 4129962d-4fca-5c36-8f39-99a7451d71b6
+
+	measure 'Weight-FCR' =
+			VAR DefaultFCR = IF(ISBLANK([FCR L2]) || [FCR L2] = 0, 0.80, [FCR L2])
+			RETURN IF(DefaultFCR >= 0.80, 0.20, 0)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 859b8fdf-a188-5cb3-8fdd-1c0531779946
+
+	measure 'Weight-RR' = if([RR]<=10, .20,0)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: a910fcf1-e1ca-5822-b285-38a84533b2b0
+
+	measure RR = 10
+		formatString: 0
+		lineageTag: cb53f414-9bf3-5cd5-bcf1-ceb3148ddfa5
+
+	measure 'L2 Performance' = [Weight-CSAT] + [Weight-Quality] + [Weight-FCR] + [Weight-RR] + [Weight-OnTime]
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 1c7f4625-9940-531c-a3ee-7ea4efbb4fd8
+
+	measure 'Within SLA' =
+			CALCULATE(
+			    COUNTROWS(Genesys),
+			    (Genesys[Total Queue Seconds] <= 30 &&
+			    Genesys[Total Queue Minutes] < 1)
+			)
+		formatString: 0
+		lineageTag: a59d1be6-f4da-5174-a984-478d6f893d3f
+
+	measure 'Not Answering Rate' =
+			IF(
+			    CALCULATE(NOT(ISBLANK(MAX(Genesys[Users - Not Responding])))),
+			    IF(
+			        NOT(ISBLANK([Total Calls])) && [Total Calls] <> 0,
+			        DIVIDE([Not Answered], ([Total Calls] + [Not Answered]), 0),
+			        0
+			    ),
+			    BLANK()
+			)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: e6ab661e-bec4-5bbf-95fa-632186117c54
+
+	measure 'Not Answered' =
+			CALCULATE(
+			    COUNT('Genesys_Abandoned'[Agents]),
+			    FILTER(
+			        'Genesys_Abandoned',
+			        ('Genesys_Abandoned'[Total Queue Seconds] > 15 || 'Genesys_Abandoned'[Total Queue Minutes] > 0)
+			    )
+			)
+		formatString: 0
+		lineageTag: 049ec511-063e-5831-9521-949581726948
+
+	measure 'Total Calls 2' = COUNT(Genesys[Conversation ID]) - ([Fast Abandoned Agents] + [Calls not calculated])
+		formatString: 0
+		lineageTag: b0ba909f-8c21-5079-a7dd-fdb67ac23365
+
+	measure 'Answered by Agent' = [Total Calls] - [Not Answered]
+		formatString: 0
+		lineageTag: 8c9fb8fa-c3af-5125-8088-df70aab5d810
+
+	measure 'AR Agent' = 1 - ([Answered by Agent]/[Total Calls])
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: adc84157-6eea-5e37-8537-1ffd02b884ab
+
+	measure 'FCR L2' =
+			AVERAGEX(
+			    FILTER(
+			        'FCR_L2',
+			        'FCR_L2'[FCR Percentage] <> 0
+			    ),
+			    'FCR_L2'[FCR Percentage]
+			)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: ea5a5b16-f942-588b-afcb-e9d58a67ee27
+
+	measure 'FCR Team' =
+			VAR RowValue =
+			    CALCULATE(
+			        MAX('FCR_Team'[Column4]),
+			        'FCR_Team'[Incidents] = "FCR"
+			    )
+			RETURN
+			    RowValue
+		lineageTag: 2e70ecc5-ed97-5811-8dbe-fd8750008d2f
+
+	measure 'CSAT Negative' =
+			CALCULATE(
+			    COUNTROWS('CSAT'),
+			    'CSAT'[Score]= "Negative"
+			)
+		formatString: 0
+		lineageTag: 268eff9b-af24-5b3e-b5d7-f161bc603919
+
+	measure 'Fast Abandoned Agents' =
+			CALCULATE (
+			    COUNT(Genesys[Conversation ID]),
+			    FILTER (
+			        Genesys,
+			        Genesys[Total Queue Seconds] <= 15 &&
+			        Genesys[Abandoned in Queue] = "GL DELAVAL EN" &&
+			        ISBLANK((Genesys[Total Talk])
+			    )
+			)
+			)
+		lineageTag: c84389a6-4ef7-5d04-80c3-433257ca06e2
+
+	measure 'Calls not calculated' =
+			CALCULATE (
+			    COUNT(Genesys[Conversation ID]),
+			    FILTER (
+			        Genesys,
+			        ISBLANK(Genesys[Total Talk Calculated]) &&
+			        Genesys[Abandoned] = "NO"
+			    )
+			)
+		formatString: 0
+		lineageTag: 453e6c48-dca7-5e26-aace-9a887bbeffbb
+
+	measure 'CSAT Not Valid' =
+			CALCULATE(
+			    COUNTROWS('CSAT'),
+			    'CSAT'[Score]= "Not Valid"
+			)
+		formatString: 0
+		lineageTag: e0c47278-dc88-5eb8-af85-6b6af95a647f
+
+	measure 'AVG Quality' = AVERAGE('Quality'[Total Score])/100
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 60bfd93d-5408-57e8-b912-27512a85909f
+
+	measure 'Max GoS' = 1
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 389e3e46-8c16-5064-af92-4398b302a81b
+
+	measure 'Min GoS' = .0
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: b6c278b7-0000-5d3c-bd0f-2a8d61d5847f
+
+	measure 'Target AR' = .05
+		formatString: 0%;-0%;0%
+		lineageTag: b185ffa9-ff10-58a4-b7c1-fed8dcd08433
+
+	measure 'Target CSAT' = .8
+		formatString: 0%;-0%;0%
+		lineageTag: 5e06e6d8-a6a4-5121-8186-f48e72540ec9
+
+	measure 'Target FCR' = .9
+		formatString: 0%;-0%;0%
+		lineageTag: 241c1450-e730-5000-b12c-dce92a8f2865
+
+	measure 'Target GoS' = .9
+		formatString: 0%;-0%;0%
+		lineageTag: d974b7e8-be93-5c58-b597-6b4c60bd1a8a
+
+	measure 'Target Quality' = .8
+		formatString: 0%;-0%;0%
+		lineageTag: 7ed5de96-c547-5415-97f8-2ca12c1d9c3d
+
+	measure 'Working Days' =
+			COUNTROWS(DISTINCT('Adherence'[Date])
+			)
+		formatString: 0
+		lineageTag: b67c193d-2bcc-55fe-aeec-a6b2a7cd92cf
+
+	measure 'All Adherence' = COUNTROWS(DISTINCT(('Adherence'[date])))
+		lineageTag: 5127bba9-9027-5224-8ce4-cd8002c2a5ff
+
+	measure 'Positive Adherence' =
+			CALCULATE(
+			    COUNTROWS('Adherence'),
+			    FILTER('Adherence', 'Adherence'[adherence] = "Positive")
+			)
+		formatString: 0
+		lineageTag: 77f88a33-949c-5b63-a62a-d5bcb942094e
+
+	measure Adherence =
+			IF([Positive Adherence] <> 0,
+			DIVIDE([Positive Adherence],[All Adherence],0))
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 6d878a90-69a2-57fc-88d5-9bd754fd4186
+
+	measure 'Weight-Adherence' = IF([Adherence] >= 0.95, 0.1, 0)
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 9d31e8ed-5050-5c0d-b078-475e1e12ee81
+
+	measure 'Break Duration' = Sum(break[Break Duration])
+		lineageTag: 315e7d4b-421a-52a7-aeb2-776b8172122d
+
+	measure 'Shift Duration' = SUMX('Adherence', MIN('Adherence'[Shift Duration] * 24, 9))
+		lineageTag: 3926e5d9-200a-5ed4-9ea7-c784bc09c289
+
+	measure 'All Break' = COUNTROWS(DISTINCT(('Break'[Date])))
+		formatString: 0
+		lineageTag: 2cf8d311-a85b-5687-88d8-46b0ce4c4ffb
+
+	measure 'Break Usage' = [Break Duration]/[Working Days]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 78a46c8f-7281-5e56-a9de-fb4804206601
+
+	measure 'Weight-Break' = IF([Break Usage] >= 0.9, 0.1, 0)
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 855bcdc6-5119-5ea6-a6d2-014a6552a4e3
+
+	measure 'On-Time' =
+			CALCULATE(
+			    COUNTROWS('Adherence'),
+			    FILTER(
+			        'Adherence',
+			        'Adherence'[Lateness Status] = "On-Time"
+			        &&
+			        NOT (
+			            'Adherence'[Agents] = "Mahmoud Hadhood"
+			            && 'Adherence'[Date] IN { DATE(2024,10,7), DATE(2024,10,17) }
+			        )
+			    )
+			)
+		formatString: 0
+		lineageTag: c7e2f92a-3ac8-51bb-bfaa-21b3d5efbfee
+
+	measure 'On-Time Rate' = [On-Time]/[Working Days]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: f35a8478-e207-51fd-bfb4-f4820e31ea31
+
+	measure 'L1 Rank' =
+			RANKX(
+			    ALLSELECTED('Agents'),
+			    [L1 Score],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: a9432fcc-b131-5f2d-98f7-2100e46ac431
+
+	measure 'Weight-OnTime' = IF([On-Time Rate] >= 0.85, 0.2, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: a3da2937-1b0d-544d-9b53-6421610ed8ca
+
+	measure 'IM-Response time Rate' = AVERAGE(IM[Response time Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: 75119a1e-f91f-51c7-af2e-4ff65b32e44b
+
+	measure 'IM-Resolution time Rate' = AVERAGE(IM[Resolution time Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: 0aa7a766-93b0-536d-9ac7-2c0927c557da
+
+	measure 'IM-Tasks on time Rate' = AVERAGE(IM[Tasks on time Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: a563ca7d-decc-54e7-9974-3c8279b93204
+
+	measure 'IM-First Reporting Time' = AVERAGE(IM[First Reporting Time])
+		formatString: 0%;-0%;0%
+		lineageTag: 59e00cd2-7ad1-57d9-96c1-2a12eb02040d
+
+	measure 'IM-Reporting Accuracy Rate' = AVERAGE(IM[Reporting Accuracy Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: d29a3e30-b7aa-5b7d-b14a-61708d3c6116
+
+	measure 'Weight-IM-ResponseTR' = if([IM-Response time Rate] >= .80,.15,0)
+		formatString: 0%;-0%;0%
+		lineageTag: bd5591be-1347-5eb0-b922-b601a68ca3df
+
+	measure 'Weight-IM-ResolutionTR' = if([IM-Resolution time Rate] >= .80, .15, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: ea1bfc7e-5bd6-555c-b25d-8676a7d1f4e3
+
+	measure 'Weight-IM-TasksOT' = if([IM-Tasks on time Rate] >= .90, .15, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: 09568bca-03ef-5f29-98a0-f87d42dc8666
+
+	measure 'Weight-IM-FirstRT' = if([IM-First Reporting Time] >= .95 ,.15,0)
+		formatString: 0%;-0%;0%
+		lineageTag: f568e932-8efa-599d-bf84-ecc2a4edd29c
+
+	measure 'Weight-IM-ReportingAR' = if([IM-Reporting Accuracy Rate] = 1, .2, 0)
+		formatString: 0%;-0%;0%
+		lineageTag: 02be5c75-157a-5447-9859-93dd0bd30de5
+
+	measure 'L2 Rank' =
+			RANKX(
+			    ALLSELECTED('Agents'),
+			    [L2 Score],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: 0d26fa4f-c919-5d27-a499-30f565376bb7
+
+	measure 'IM Score' =
+			( IF ( ISBLANK ( [IM-Response time Rate] ), 1, [IM-Response time Rate] ) * 0.15 ) +
+			( IF ( ISBLANK ( [IM-Resolution time Rate] ), 1, [IM-Resolution time Rate] ) * 0.15 ) +
+			( [IM-First Reporting Time] * 0.20 ) +
+			( [IM-Reporting Accuracy Rate] * 0.20 ) +
+			[Hybrid Work Award]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: d39f5b42-2678-58d1-85d8-2aa5db9fbe77
+
+	measure 'IM Rank' =
+			RANKX(
+			    ALLSELECTED('Agents'),
+			    [IM Score],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: 59a046d1-a61d-57e7-a03c-8ca9e6d58b31
+
+	measure 'L1 Score' =
+			( IF ( ISBLANK ( [CSAT Percentage] ), 1, [CSAT Percentage] ) * 0.1 ) +
+			( [AVG Quality] * 0.1 ) +
+			( IF ( ISBLANK ( [GoS] ), 1, [GoS] ) * 0.2 ) +
+			( ( 1 - [Abandoned Rate] ) * 0.15 ) +
+			( [Chat Acceptance Rate] * 0.15 ) +
+			[Hybrid Work Award]
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 80d74a0f-ffe4-5438-a581-c78ccde4ff10
+
+	measure 'L2 Score' =
+			(
+			    (IF(ISBLANK([CSAT Percentage]), 1, [CSAT Percentage])) +
+			    (IF(ISBLANK([AVG Quality]), 1, [AVG Quality])) +
+			    [FCR L2] +
+			    [On-Time Rate]
+			) / 4
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 7e0f89bb-dec6-59fb-8b66-6fc746ff7e5f
+
+	measure 'PM Score' =
+			( IF ( ISBLANK ( [CSAT Percentage] ), 1, [CSAT Percentage] ) * 0.30 ) +
+			[PM Quality Award] +
+			[Hybrid Work Award]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: d2611b5f-b864-513c-ab16-f025c1831500
+
+	measure 'PM Rank' =
+			RANKX(
+			    ALLSELECTED('Agents'),
+			    [PM Score],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: 3a28f83c-2546-56a1-b3bf-220f35256949
+
+	measure 'KM-First Reporting Time' = AVERAGE(KM[First Reporting Time])
+		formatString: 0%;-0%;0%
+		lineageTag: 617a6ef8-f1ba-50b5-975f-2dbbce5fd75e
+
+	measure 'KM-Reporting Accuracy Rate' = AVERAGE(KM[Reporting Accuracy Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: d6409e19-8097-5ad1-abe4-ccf0948846a8
+
+	measure 'KM-On-Time Delivery Rate' = AVERAGE(KM[On-Time Delivery Rate])
+		formatString: 0%;-0%;0%
+		lineageTag: 27fc9666-32e6-5c68-a27a-d8fc2f64d90a
+
+	measure 'KM Score' =
+			( [KM-On-Time Delivery Rate] * 0.20 ) +
+			( [KM-First Reporting Time] * 0.10 ) +
+			( [KM-Reporting Accuracy Rate] * 0.40 ) +
+			[Hybrid Work Award]
+		formatString: 0.0%;-0.0%;0.0%
+		lineageTag: 3346e1f9-0151-5fe5-a695-42cfe9354f81
+
+	measure 'KM Rank' =
+			RANKX(
+			    ALLSELECTED('Agents'),
+			    [KM Score],
+			    ,
+			    DESC,
+			    DENSE
+			)
+		formatString: 0
+		lineageTag: 6d5394f7-a20a-5ff4-94fa-86dc114d8c85
+
+	measure 'Fast Abandoned Team' =
+			CALCULATE (
+			    COUNT(Genesys[Conversation ID]),
+			    FILTER (
+			        Genesys,
+			        Genesys[Total Queue Seconds] <= 30 &&
+			        Genesys[Abandoned in Queue] = "GL DELAVAL EN" &&
+			        ISBLANK((Genesys[Total Talk])
+			    )
+			)
+			)
+		formatString: 0
+		lineageTag: 90a842f3-8f81-543f-998e-45f72483c185
+
+	measure 'Tasks Resolved by SD (FCR)' =
+			CALCULATE(
+			    COUNT('Tasks Resolved by SD'[number]),
+			    FILTER(
+			        'Tasks Resolved by SD',
+			        'Tasks Resolved by SD'[reassignment_count] <= 1
+			    )
+			)
+		formatString: 0
+		lineageTag: 2f4bc5c3-6714-527e-9e4e-dbb30e82be1f
+
+	measure 'Tasks Resolved by SD (not FCR)' =
+			CALCULATE(
+			    COUNT('Tasks Resolved by SD'[number]))
+		formatString: 0
+		lineageTag: 5cd77f0c-a967-5dd3-9a7a-2778d31483d7
+
+	measure 'Incidents Resolved by SD (FCR)' =
+			CALCULATE(
+			    COUNT('Incidents Resolved by SD'[number]),
+			    FILTER(
+			        'Incidents Resolved by SD',
+			        (
+			        'Incidents Resolved by SD'[reassignment_count] <= 1
+			    )))
+		formatString: 0
+		lineageTag: 46ca33e9-c4f1-5721-a8fe-f678654e1e5c
+
+	measure 'Incidents Resolved by SD (not FCR)' =
+			CALCULATE(
+			    COUNT('Incidents Resolved by SD'[number]))
+		formatString: 0
+		lineageTag: 3492027e-88b7-5ac1-88b9-732429ee4913
+
+	measure FCR = ([Tasks Resolved by SD (FCR)] + [Incidents Resolved by SD (FCR)])/([Tasks Resolved by SD (not FCR)]+[Incidents Resolved by SD (not FCR)])
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: d7c7776d-01d4-5b67-a4a4-63a36139eb55
+
+	measure QualityAvg = AVERAGE('Quality'[Total Score])/100
+		lineageTag: 3278d4db-ec34-5d88-a9af-a75db419863a
+
+	measure 'PM Quality Award' =
+			IF (
+			    ISBLANK ( [AVG Quality] ),
+			    0.30,
+			    SWITCH (
+			        TRUE (),
+			        [AVG Quality] >= 0.90, 0.30,
+			        [AVG Quality] >= 0.85, 0.20,
+			        [AVG Quality] >= 0.80, 0.10,
+			        0
+			    )
+			)
+		lineageTag: da1f6f5a-ff6f-5c6c-bcd3-6544d809776c
+
+	column TimeNow
+		dataType: string
+		lineageTag: 0416aa5c-c88b-5fbc-9dbb-ae496f7524d5
+		summarizeBy: none
+		sourceColumn: TimeNow
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 1aec4aa7-f132-5fef-a401-3b2c1c0bbae2
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition Metrics = m
+		mode: import
+		source =
+				let
+				    Source = DateTime.LocalNow(),
+				    #"Converted to Table" = #table(1, {{Source}}),
+				    #"Renamed Columns" = Table.RenameColumns(#"Converted to Table",{{"Column1", "TimeNow"}}),
+				    #"Inserted Date" = Table.AddColumn(#"Renamed Columns", "Date", each DateTime.Date([TimeNow]), type date)
+				in
+				    #"Inserted Date"
+
+	annotation PBI_ResultType = Table

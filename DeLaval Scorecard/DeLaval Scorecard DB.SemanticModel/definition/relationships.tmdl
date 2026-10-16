@@ -1,0 +1,124 @@
+relationship 243b62ef-d87b-587e-a08a-e4e9589593b9
+	crossFilteringBehavior: bothDirections
+	fromColumn: Genesys.Agents
+	toColumn: Agents.Agents
+
+relationship d80e2e13-c9a8-5161-84b0-11bd78415c21
+	fromColumn: FCR_L2.Agents
+	toColumn: Agents.Agents
+
+relationship cef1388f-af86-508e-b9ba-c09dd6aa13b6
+	fromColumn: Genesys_Abandoned.Agents
+	toColumn: Agents.Agents
+
+relationship e689acc8-98d6-5a30-a58b-51f1dca9c9b3
+	fromColumn: Quality.Agents
+	toColumn: Agents.Agents
+
+relationship a1d7aaf7-82c2-5176-81d1-db2767f9c31b
+	fromColumn: Adherence.Agents
+	toColumn: Agents.Agents
+
+relationship 80419ad8-fa1e-5ef6-96cd-4987f6899219
+	fromColumn: Status.Agents
+	toColumn: Agents.Agents
+
+relationship 339e188a-ed30-5d3a-8411-37ff68543128
+	fromColumn: Break.Agents
+	toColumn: Agents.Agents
+
+relationship 585e62ba-c36d-5e3d-b1fb-2b403f217c11
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: IM.Agents
+	toColumn: Agents.Agents
+
+relationship d0ac550d-e473-5bba-90d7-3e7be43ae730
+	fromColumn: CSAT.Date
+	toColumn: Date.Date
+
+relationship 3ccf27b0-b655-5927-b821-cfab9fe853b5
+	fromColumn: Quality.Date
+	toColumn: Date.Date
+
+relationship 7d1f2f7a-9e69-5a55-8035-3f016c8baa7c
+	fromColumn: Genesys_Abandoned.Date
+	toColumn: Date.Date
+
+relationship a86124f4-43b6-56a7-9d63-210e09775adc
+	fromColumn: Genesys.Date
+	toColumn: Date.Date
+
+relationship e0bff291-1302-56dc-9f1f-bc5c3d39ef7c
+	fromColumn: Adherence.Date
+	toColumn: Date.Date
+
+relationship df3deca7-33d2-5ad1-9206-ce4489b0d5f9
+	fromColumn: Break.Date
+	toColumn: Date.Date
+
+relationship 867efaae-8e2e-5a0c-8b63-4bd19d48a228
+	fromColumn: Status.Date
+	toColumn: Date.Date
+
+relationship d8006dc9-1a3b-581b-9b8d-44d2914f93bc
+	fromColumn: Schedule.Date
+	toColumn: Date.Date
+
+relationship edd8b71a-6f98-5450-be39-b7f23f7747e6
+	fromColumn: 'Tasks Resolved by SD'.Date
+	toColumn: Date.Date
+
+relationship 19c5537d-aa62-54dd-8573-5a8661940f42
+	fromColumn: 'Incidents Resolved by SD'.Date
+	toColumn: Date.Date
+
+relationship b529c7a1-de98-5b10-a63d-6b88157a0f5e
+	fromColumn: CSAT.Agents
+	toColumn: Agents.Agents
+
+relationship af6d85fa-5fd9-5833-bf57-a329127be228
+	fromColumn: 'Chat-Closed-Complete'.Agents
+	toColumn: Agents.Agents
+
+relationship 45d55a4e-79c6-56d6-a770-02f9f5f5d475
+	isActive: false
+	fromColumn: 'Chat-Closed-Complete'.Date
+	toColumn: Date.Date
+
+relationship dcd3fd88-add9-5a6b-acf9-6a9b7fa499bb
+	fromColumn: 'Chat-Time-Out'.Date
+	toColumn: Date.Date
+
+relationship a6736a79-cff5-54fb-a1b7-328f8f0aa4c3
+	fromColumn: 'Chat-Time-Out'.Agents
+	toColumn: Agents.Agents
+
+relationship c0bf6a86-5c9c-513c-ac40-3dac1af5c4c3
+	fromColumn: FCR_L2.Date
+	toColumn: Date.Date
+
+relationship 26d1a9bb-686f-5719-80e9-55e946222597
+	crossFilteringBehavior: bothDirections
+	fromCardinality: one
+	fromColumn: KM.Agents
+	toColumn: Agents.Agents
+
+relationship ff5c8ad5-5b41-5bc6-8153-92d7e3671140
+	isActive: false
+	fromColumn: Schedule.Agents
+	toColumn: Agents.Agents
+
+relationship c9185bdd-d0bd-5648-bd23-2122242b2af0
+	fromColumn: DailyCheck.'Employee Name'
+	toColumn: Agents.Agents
+
+relationship e9fbe83f-6d02-5117-a8dc-f413fe908d2a
+	isActive: false
+	fromColumn: DailyCheck.Date
+	toColumn: Date.Date
+
+relationship c2592742-36e2-4e40-a828-c4c220413f8f
+	joinOnDateBehavior: datePartOnly
+	fromColumn: Date.Date
+	toColumn: 'LocalDateTable_af6ced73-30cb-4078-8a3b-80e5b8498b8e'.Date

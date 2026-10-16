@@ -1,0 +1,62 @@
+table Break
+	lineageTag: 3a930f28-d7f5-5f78-8fb5-5817be9b2a58
+
+	column Agents
+		dataType: string
+		lineageTag: 7f715163-f0b6-5837-9f42-dbae7e10c8a1
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 009f4b05-2e39-57f6-bf13-57ebaa490e73
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Primary Status'
+		dataType: string
+		lineageTag: ad910724-b908-5501-95f3-54a3f04d6d05
+		summarizeBy: none
+		sourceColumn: Primary Status
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Break Duration'
+		dataType: double
+		lineageTag: fd68ceb5-4b39-510d-9e3a-0ce46585d810
+		summarizeBy: sum
+		sourceColumn: Break Duration
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Break
+		dataType: string
+		lineageTag: ee19c51c-2b81-5e34-a60e-c00836de28ef
+		summarizeBy: none
+		sourceColumn: Break
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Break = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Break", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Date", type date}, {"Primary Status", type text}, {"Break Duration", type number}, {"Break", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

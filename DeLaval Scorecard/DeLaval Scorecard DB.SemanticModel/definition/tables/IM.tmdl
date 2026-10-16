@@ -1,0 +1,86 @@
+table IM
+	lineageTag: 75d94543-c25b-5cd2-b9a4-d6f9802049d2
+
+	column Agents
+		dataType: string
+		lineageTag: 305089e2-53af-5696-9c10-504d7e6a423a
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Response time Rate'
+		dataType: double
+		lineageTag: f52bc128-f15e-5720-8f31-7f9628763165
+		summarizeBy: sum
+		sourceColumn: Response time Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Resolution time Rate'
+		dataType: double
+		lineageTag: af8574e1-0d3a-55b8-81b4-011ba407f827
+		summarizeBy: sum
+		sourceColumn: Resolution time Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Tasks on time Rate'
+		dataType: double
+		lineageTag: 82ef0226-d514-582a-af46-c3250672f102
+		summarizeBy: sum
+		sourceColumn: Tasks on time Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'First Reporting Time'
+		dataType: double
+		lineageTag: 4069fd3e-f154-59d4-af54-59203c8eb6d4
+		summarizeBy: sum
+		sourceColumn: First Reporting Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Reporting Accuracy Rate'
+		dataType: double
+		lineageTag: 7075d785-283f-5ab6-92f9-e758fbc009e1
+		summarizeBy: sum
+		sourceColumn: Reporting Accuracy Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 1ccf75f4-cf90-5a22-a438-bd2a3ac3a02f
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition IM = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "IM", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Response time Rate", type number}, {"Resolution time Rate", type number}, {"Tasks on time Rate", type number}, {"First Reporting Time", type number}, {"Reporting Accuracy Rate", type number}, {"Date", type date}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

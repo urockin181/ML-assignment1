@@ -1,0 +1,7 @@
+expression DataFile = "C:\DeLaval Scorecard\Data\Scorecard_Data.xlsx" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: b310aa6f-e617-57f6-8407-403c5db22a48
+	queryGroup: Parameters
+
+	annotation PBI_ResultType = Text
+
+	annotation PBI_NavigationStepName = Navigation

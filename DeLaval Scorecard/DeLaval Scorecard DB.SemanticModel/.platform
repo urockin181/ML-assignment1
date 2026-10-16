@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "SemanticModel",
+    "displayName": "DeLaval Scorecard DB"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "e2da01bb-3709-5550-8728-00322376f9e0"
+  }
+}

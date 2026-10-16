@@ -1,0 +1,133 @@
+table 'Tasks Resolved by SD'
+	lineageTag: 31752599-6332-56ab-a559-41b6c6f75d31
+
+	column number
+		dataType: string
+		lineageTag: 0b069044-b2b5-5b95-adcf-ba1c26ac921e
+		summarizeBy: none
+		sourceColumn: number
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 69d64afa-f182-5c48-9285-c16e44546aea
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column assigned_to
+		dataType: string
+		lineageTag: afd90359-fd8f-52b2-9da7-2c048ad20b7f
+		summarizeBy: none
+		sourceColumn: assigned_to
+
+		annotation SummarizationSetBy = Automatic
+
+	column state
+		dataType: string
+		lineageTag: 8bd787a9-449b-5810-9bc7-8ad0ff63cd80
+		summarizeBy: none
+		sourceColumn: state
+
+		annotation SummarizationSetBy = Automatic
+
+	column priority
+		dataType: string
+		lineageTag: 55cafb00-26d7-510b-a42f-8f06c3243205
+		summarizeBy: none
+		sourceColumn: priority
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.cat_item'
+		dataType: string
+		lineageTag: a43597af-78f1-5abf-b64e-ae31c5bdddd9
+		summarizeBy: none
+		sourceColumn: request_item.cat_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column request_item
+		dataType: string
+		lineageTag: b3e54b3a-183b-5859-bae3-9008d87818ab
+		summarizeBy: none
+		sourceColumn: request_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.u_request_on_behalf_of'
+		dataType: string
+		lineageTag: 3735ba86-26ae-546e-a055-d4ba8ccdda5a
+		summarizeBy: none
+		sourceColumn: request_item.u_request_on_behalf_of
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.requested_for'
+		dataType: string
+		lineageTag: b1e744c3-9a1d-5bb3-89e2-d20a69e52521
+		summarizeBy: none
+		sourceColumn: request_item.requested_for
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'request_item.requested_for.location'
+		dataType: string
+		lineageTag: 3172d44a-0b26-5173-b2d5-6f73f8703dd9
+		summarizeBy: none
+		sourceColumn: request_item.requested_for.location
+
+		annotation SummarizationSetBy = Automatic
+
+	column short_description
+		dataType: string
+		lineageTag: 368f3b21-9339-5ef2-8c11-64c7ae06b18e
+		summarizeBy: none
+		sourceColumn: short_description
+
+		annotation SummarizationSetBy = Automatic
+
+	column assignment_group
+		dataType: string
+		lineageTag: 08db5b6c-fecf-5e22-b4d8-ea861158684a
+		summarizeBy: none
+		sourceColumn: assignment_group
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'assignment_group.manager'
+		dataType: string
+		lineageTag: e4f87d7b-0d3c-5483-8763-1673d0cbf0b1
+		summarizeBy: none
+		sourceColumn: assignment_group.manager
+
+		annotation SummarizationSetBy = Automatic
+
+	column reassignment_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 4a275c32-decf-5900-a358-c579dcb3d66f
+		summarizeBy: sum
+		sourceColumn: reassignment_count
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Tasks Resolved by SD' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Tasks Resolved by SD", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"number", type text}, {"Date", type date}, {"assigned_to", type text}, {"state", type text}, {"priority", type text}, {"request_item.cat_item", type text}, {"request_item", type text}, {"request_item.u_request_on_behalf_of", type text}, {"request_item.requested_for", type text}, {"request_item.requested_for.location", type text}, {"short_description", type text}, {"assignment_group", type text}, {"assignment_group.manager", type text}, {"reassignment_count", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

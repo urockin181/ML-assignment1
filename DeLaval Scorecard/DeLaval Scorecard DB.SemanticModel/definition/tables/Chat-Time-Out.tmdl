@@ -1,0 +1,61 @@
+table 'Chat-Time-Out'
+	lineageTag: dfe6d04d-9af4-5584-89b2-9fd7d57a181d
+
+	column Index
+		dataType: int64
+		formatString: 0
+		lineageTag: aa8296a1-1a6b-566b-be6e-2c58d174e405
+		summarizeBy: sum
+		sourceColumn: Index
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 306aef80-dcd4-54dd-b6ff-40f0d47c3596
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column work_item
+		dataType: string
+		lineageTag: 0d4cb365-c5b3-50cb-9f46-5afb625d36a4
+		summarizeBy: none
+		sourceColumn: work_item
+
+		annotation SummarizationSetBy = Automatic
+
+	column reason
+		dataType: string
+		lineageTag: ce30a2d3-a0d6-5694-ae3e-0afd3fee762b
+		summarizeBy: none
+		sourceColumn: reason
+
+		annotation SummarizationSetBy = Automatic
+
+	column Agents
+		dataType: string
+		lineageTag: 62e6d022-bcb5-5964-8bcc-7575cbe346a8
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Chat-Time-Out' = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Chat-Time-Out", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Index", Int64.Type}, {"Date", type date}, {"work_item", type text}, {"reason", type text}, {"Agents", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,165 @@
+table Adherence
+	lineageTag: 9e6efa66-745e-5b41-a7c3-44aba2df65f1
+
+	measure Lateness =
+			SUMX(
+			    Adherence,
+			    VAR ShiftTime =
+			        LOOKUPVALUE(
+			            Schedule[Shift],
+			            Schedule[Agents], Adherence[Agents],
+			            Schedule[Date], Adherence[Date]
+			        )
+			    VAR IsException =
+			        (
+			            Adherence[Agents] = "Mahmoud Hadhood"
+			            && Adherence[Date] IN {
+			                DATE(2025, 10, 7),
+			                DATE(2025, 10, 17)
+			            }
+			        )
+			    RETURN
+			        IF(
+			            IsException,
+			            0,   -- Force lateness to zero for these exceptions
+			            IF(
+			                Adherence[Log In Time] > ShiftTime,
+			                DATEDIFF(
+			                    ShiftTime,
+			                    Adherence[Log In Time],
+			                    MINUTE
+			                ),
+			                0
+			            )
+			        )
+			)
+		formatString: 0
+		lineageTag: 4414c4b3-16a7-5de6-a2b9-12347bb57833
+
+	measure 'Lateness Status' =
+			IF( [Lateness] > 12,
+			    "Late",
+			    "On-Time"
+			)
+		lineageTag: 10413b4b-31ad-5ffa-8a23-874979776bd6
+
+	measure 'Chat Closed Complete' = CALCULATE(COUNTROWS('Chat-Closed-Complete'),'Chat-Closed-Complete'[state]="Closed Complete" )
+		formatString: 0
+		lineageTag: fa6efce8-9228-5586-bcc9-b55dce350ce9
+
+	measure 'Chat Timed Out' = CALCULATE(COUNTROWS('Chat-Time-Out'),'Chat-Time-Out'[reason]="Time out")
+		formatString: 0
+		lineageTag: 754c356e-f838-5ae7-a185-1bbe90777f55
+
+	measure 'Chat Acceptance Rate' =
+			VAR AgentName= SELECTEDVALUE(Agents[Agents])
+			VAR Handled= CALCULATE(COUNTROWS('Chat-Closed-Complete'),'Chat-Closed-Complete'[Agents]=  AgentName )
+			VAR Rejected = CALCULATE(COUNTROWS('Chat-Time-Out'),'Chat-Time-Out'[Agents]=AgentName)
+			RETURN DIVIDE(Handled,Handled+Rejected)
+		formatString: 0%;-0%;0%
+		lineageTag: c1da816d-4d9a-5522-9fa7-779e122c323f
+
+	measure 'Hybrid Work Compliance %' =
+			VAR RequiredDays =
+			    CALCULATE (
+			        COUNTROWS ( DailyCheck ),
+			        KEEPFILTERS ( DailyCheck[Required On-Site] = "Yes" ),
+			        KEEPFILTERS ( DailyCheck[Exception?] <> "Yes" ),
+			        KEEPFILTERS ( NOT DailyCheck[Manager Review] IN { "Annual", "Public Holiday", "Compensation", "OFF" } )
+			    )
+			VAR ActualOnSite =
+			    CALCULATE (
+			        COUNTROWS ( DailyCheck ),
+			        KEEPFILTERS ( DailyCheck[Required On-Site] = "Yes" ),
+			        KEEPFILTERS ( DailyCheck[Exception?] <> "Yes" ),
+			        KEEPFILTERS ( DailyCheck[Manager Review] = "On-Site" )
+			    )
+			RETURN
+			    DIVIDE ( ActualOnSite, RequiredDays )
+		formatString: 0.00%;-0.00%;0.00%
+		lineageTag: 13dbf4be-f39b-5906-8a23-adc9ab9e6006
+
+	measure 'Hybrid Work Award' =
+			SWITCH (
+			    TRUE (),
+			    ISBLANK ( [Hybrid Work Compliance %] ), BLANK (),
+			    [Hybrid Work Compliance %] >= 0.90, 0.30,
+			    [Hybrid Work Compliance %] >= 0.80, 0.15,
+			    [Hybrid Work Compliance %] >= 0.70, 0.10,
+			    0
+			)
+		lineageTag: 9f968899-6414-5ed3-b87d-28adf422ec05
+
+	column Agents
+		dataType: string
+		lineageTag: 85d08ac1-9948-5ed2-a943-6692a6693fa0
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: d1fba3ff-52c7-5d86-97d4-a5f459e16866
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Log In Time'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: 8ab90d1b-ed94-5dc5-bd97-e17ec273d00f
+		summarizeBy: none
+		sourceColumn: Log In Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Log Out Time'
+		dataType: dateTime
+		formatString: Long Time
+		lineageTag: e70e1baf-d990-5ac4-95fb-774a3ece4bd5
+		summarizeBy: none
+		sourceColumn: Log Out Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Time
+
+	column 'Shift Duration'
+		dataType: double
+		lineageTag: 4a56d3f9-a990-5c55-891e-d49ec4636710
+		summarizeBy: sum
+		sourceColumn: Shift Duration
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Adherence
+		dataType: string
+		lineageTag: a1647a68-0eb1-5b98-802b-ac112b2a9f3b
+		summarizeBy: none
+		sourceColumn: Adherence
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Adherence = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "Adherence", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Date", type date}, {"Log In Time", type time}, {"Log Out Time", type time}, {"Shift Duration", type number}, {"Adherence", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

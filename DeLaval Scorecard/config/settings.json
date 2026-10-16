@@ -1,0 +1,26 @@
+{
+  "grade_to_role": {
+    "L1": "L1",
+    "L2": "L2",
+    "IM": "IM",
+    "IM CO": "IM",
+    "KM": "KM",
+    "PM": "PM"
+  },
+  "part_time_agents": ["Mohamed Elezaby"],
+  "full_time_min_shift": "08:50",
+  "part_time_min_shift": "04:50",
+  "max_daily_break": "01:10",
+  "genesys_excluded_interacted_users": ["Anastasiia SHURAK"],
+  "csat_not_valid_instances": [
+    "AINST0030023",
+    "AINST0029870",
+    "AINST0030526",
+    "AINST0030517",
+    "AINST0030634",
+    "AINST0030782",
+    "AINST0033454"
+  ],
+  "chat_excluded_work_items": ["Interaction: IMS0026205"],
+  "adherence_excluded_dates": []
+}

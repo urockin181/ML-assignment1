@@ -1,0 +1,65 @@
+table KM
+	lineageTag: 739ac521-1397-5ecc-8134-7834d225ff05
+
+	column 'On-Time Delivery Rate'
+		dataType: double
+		lineageTag: e7c6525a-bb73-59f2-afd4-5f05a3cc4ee1
+		summarizeBy: sum
+		sourceColumn: On-Time Delivery Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Reporting Accuracy Rate'
+		dataType: double
+		lineageTag: 700335f9-e588-5caf-8df1-33f7b737346c
+		summarizeBy: sum
+		sourceColumn: Reporting Accuracy Rate
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'First Reporting Time'
+		dataType: double
+		lineageTag: 7fdff3f5-cdd4-5337-8f2c-8c3462f2e854
+		summarizeBy: sum
+		sourceColumn: First Reporting Time
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Reporting Accuracy Rate_1'
+		dataType: double
+		lineageTag: b96ac261-6077-56e6-a9fd-2c9bae92310f
+		summarizeBy: sum
+		sourceColumn: Reporting Accuracy Rate_1
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Agents
+		dataType: string
+		lineageTag: 661e1c73-415b-5381-a19d-b8e92c519abc
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	partition KM = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "KM", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"On-Time Delivery Rate", type number}, {"Reporting Accuracy Rate", type number}, {"First Reporting Time", type number}, {"Reporting Accuracy Rate_1", type number}, {"Agents", type text}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,64 @@
+table FCR_L2
+	lineageTag: d8e9ec66-9f40-5937-873b-91839ef6b1c4
+
+	column Agents
+		dataType: string
+		lineageTag: 09f2cd6e-5d92-5feb-8c03-92a08bc5a765
+		summarizeBy: none
+		sourceColumn: Agents
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Solved Assigned'
+		dataType: int64
+		formatString: 0
+		lineageTag: 33ede50f-f41b-5b61-97f2-eaf2e239865e
+		summarizeBy: sum
+		sourceColumn: Solved Assigned
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Total Assigned'
+		dataType: int64
+		formatString: 0
+		lineageTag: 2ed5859a-787a-54e3-b9d8-2256b77c77b8
+		summarizeBy: sum
+		sourceColumn: Total Assigned
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'FCR Percentage'
+		dataType: double
+		lineageTag: 0740b525-ad98-5554-981d-fed31ef937b0
+		summarizeBy: sum
+		sourceColumn: FCR Percentage
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Date
+		dataType: dateTime
+		formatString: Long Date
+		lineageTag: 73f09ca0-9ebf-55dd-9a81-df3ee3d47e4a
+		summarizeBy: none
+		sourceColumn: Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	partition FCR_L2 = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(DataFile), null, true),
+				    Sheet = Source{[Item = "FCR_L2", Kind = "Sheet"]}[Data],
+				    #"Promoted Headers" = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Promoted Headers", {{"Agents", type text}, {"Solved Assigned", Int64.Type}, {"Total Assigned", Int64.Type}, {"FCR Percentage", type number}, {"Date", type date}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_NavigationStepName = Navigation
+
+	annotation PBI_ResultType = Table
