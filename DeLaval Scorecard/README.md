@@ -52,7 +52,10 @@ writes **one** workbook (`Data/Scorecard_Data.xlsx`). Power BI reads only that w
    Keep **one** file of each kind. Exports that cover several months (Genesys, CSAT,
    Quality, Tasks and Incidents) are fine, because the script keeps only the report month.
 2. Double-click **`Update Dashboard.bat`** (or run `python scripts/prepare_scorecard_data.py`).
-   It uses the **previous calendar month** by default. To choose a month, run
+   The dashboard always shows **one month**, taken from the source files: the latest month
+   that most of the files reach. If the exports end on 30 September, it shows September.
+   One stray record from the next month (for example a CSAT survey on 1 October) doesn't
+   change the month; the script prints a warning instead. To force a month, run
    `python scripts/prepare_scorecard_data.py --month 2026-09`.
 3. Read the messages it prints. Lines marked `WARNING` mean a source file is missing or
    incomplete. The same messages are saved in the **Log** sheet of `Data/Scorecard_Data.xlsx`.

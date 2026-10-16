@@ -7,7 +7,7 @@ writes ONE workbook (Data/Scorecard_Data.xlsx) with one sheet per model table.
 The Power BI project reads only that workbook.
 
 Usage (from the "DeLaval Scorecard" folder):
-    python scripts/prepare_scorecard_data.py                  # previous calendar month
+    python scripts/prepare_scorecard_data.py                  # month taken from the source files
     python scripts/prepare_scorecard_data.py --month 2026-09  # a specific month
 
 Source files are recognised by their content (column headers / sheet names),
@@ -537,6 +537,60 @@ def month_sheet_matches(title: str, start: dt.date) -> bool:
     return not years or any(y in (str(start.year), str(start.year)[2:]) for y in years)
 
 
+def latest_dates(files: dict[str, Path]) -> dict[str, dt.date]:
+    """Last date found in each dated source file."""
+    csv_date_cols = {
+        "genesys_calls": "Date", "genesys_status": "Start Time", "csat": "instance.taken_on",
+        "chat_closed": "opened_at", "chat_timed_out": "sys_created_on", "tasks": "opened_at", "incidents": "opened_at",
+    }
+    latest = {}
+    for kind, column in csv_date_cols.items():
+        if kind in files:
+            d = parse_datetime(read_csv(files[kind])[column]).max()
+            if pd.notna(d):
+                latest[kind] = d.date()
+    if "quality" in files:
+        d = pd.to_datetime(pd.read_excel(files["quality"], sheet_name="Merged")["Audit Date"], errors="coerce").max()
+        if pd.notna(d):
+            latest["quality"] = d.date()
+    if "attendance" in files:
+        wb = openpyxl.load_workbook(files["attendance"], data_only=True)
+        dates = [c.value for ws in wb.worksheets if "DailyCheck" in ws.tables or ws.title == "Daily Check"
+                 for c in ws["A"] if isinstance(c.value, dt.datetime)]
+        if dates:
+            latest["attendance"] = max(dates).date()
+    if "rota" in files:
+        wb = openpyxl.load_workbook(files["rota"], data_only=True)
+        rows = list(wb["L1"].iter_rows(min_row=1, max_row=5, values_only=True))
+        dates = [v for r in rows for v in r if isinstance(v, dt.datetime)]
+        if dates:
+            # the ROTA calendar starts on a Monday, which can fall in the previous month
+            months = pd.Series([d.date().replace(day=1) for d in dates]).mode()
+            latest["rota"] = max(months)
+    return latest
+
+
+def detect_report_month(files: dict[str, Path]) -> dt.date:
+    """Report month = the latest month that most source files reach.
+
+    A single stray record (e.g. one CSAT survey on the 1st of the next month)
+    does not move the dashboard to a new, almost empty month.
+    """
+    latest = latest_dates(files)
+    if not latest:
+        raise SystemExit("ERROR: no dated source files found - cannot work out the report month. Use --month YYYY-MM.")
+    votes = pd.Series({k: d.replace(day=1) for k, d in latest.items()})
+    counts = votes.value_counts()
+    top = counts[counts == counts.max()].index.max()
+    for kind, d in sorted(latest.items()):
+        log("INFO", f"  last date in {KIND_LABELS[kind]:<42} {d}")
+    others = sorted(k for k, m in votes.items() if m != top)
+    if others:
+        log("WARNING", "These files end in a different month than the rest: "
+                       + ", ".join(f"{KIND_LABELS[k]} ({latest[k]:%d %b %Y})" for k in others))
+    return top
+
+
 def check_file_months(files: dict[str, Path], start: dt.date) -> None:
     """Warn when a file name mentions a different month (e.g. 'August ROTA.xlsx' for September)."""
     pattern = r"\b(" + "|".join(list(MONTH_FULL.values()) + [a for a in MONTH_ABBR.values()] + ["sept"]) + r")\b"
@@ -756,24 +810,23 @@ def update_model_path(output: Path):
 # --------------------------------------------------------------------------- #
 def main(argv=None):
     p = argparse.ArgumentParser(description="Prepare the DeLaval Scorecard data for one month.")
-    p.add_argument("--month", help="Report month as YYYY-MM (default: previous calendar month).")
+    p.add_argument("--month", help="Report month as YYYY-MM (default: the latest month found in the source files).")
     p.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Folder with the raw source files.")
     p.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Workbook to create.")
     p.add_argument("--no-update-model-path", action="store_true",
                    help="Do not write the output path into the Power BI project.")
     args = p.parse_args(argv)
 
-    if args.month:
-        start = dt.datetime.strptime(args.month, "%Y-%m").date().replace(day=1)
-    else:
-        first_this_month = dt.date.today().replace(day=1)
-        start = (first_this_month - dt.timedelta(days=1)).replace(day=1)
-    end = start.replace(day=calendar.monthrange(start.year, start.month)[1])
-    log("INFO", f"Report month: {start:%B %Y} ({start} to {end})")
-
     settings = load_settings()
     names = Names(load_aliases())
     files = discover(args.source.resolve())
+    if args.month:
+        start = dt.datetime.strptime(args.month, "%Y-%m").date().replace(day=1)
+        log("INFO", f"Report month set with --month: {start:%B %Y}")
+    else:
+        start = detect_report_month(files)
+    end = start.replace(day=calendar.monthrange(start.year, start.month)[1])
+    log("INFO", f"Report month: {start:%B %Y} ({start} to {end})")
     check_file_months(files, start)
     f = files.get
 
