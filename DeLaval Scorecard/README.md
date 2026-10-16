@@ -24,7 +24,19 @@ writes **one** workbook (`Data/Scorecard_Data.xlsx`). Power BI reads only that w
 
 1. Install Python 3.10 or newer from python.org. During setup, tick **Add python.exe to PATH**.
 2. Open a command prompt in this folder and run: `pip install -r requirements.txt`
-3. On older Power BI Desktop versions, turn on **File > Options and settings > Options >
+3. Open `scripts/prepare_scorecard_data.py` and set the four paths in the **PATHS** block at the
+   top of the file (each is marked `# <-- CHANGE`):
+
+   | Setting | What it points to |
+   |---|---|
+   | `DEFAULT_SOURCE` | the folder with the monthly source files |
+   | `DEFAULT_OUTPUT` | the `Scorecard_Data.xlsx` file the script creates (Power BI reads it) |
+   | `CONFIG_DIR` | the `config` folder (`agent_aliases.csv`, `settings.json`) |
+   | `MODEL_EXPRESSIONS` | `DeLaval Scorecard DB.SemanticModel\definition\expressions.tmdl` (or `None`) |
+
+   They are preset to `C:\DeLaval Scorecard\...`. If you put the folder exactly there, you
+   don't need to change anything.
+4. On older Power BI Desktop versions, turn on **File > Options and settings > Options >
    Preview features > Power BI Project (.pbip) save option** and **Store semantic model using
    TMDL format**. Current versions don't need this.
 

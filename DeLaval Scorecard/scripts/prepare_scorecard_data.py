@@ -33,11 +33,25 @@ from openpyxl.styles import Font
 
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
-ROOT = Path(__file__).resolve().parent.parent
-DEFAULT_SOURCE = ROOT / "Source Files"
-DEFAULT_OUTPUT = ROOT / "Data" / "Scorecard_Data.xlsx"
-CONFIG_DIR = ROOT / "config"
-MODEL_EXPRESSIONS = ROOT / "DeLaval Scorecard DB.SemanticModel" / "definition" / "expressions.tmdl"
+# =========================================================================== #
+#  PATHS - replace these with the real folders on your computer.               #
+#  Keep the r before the quotes (it makes the backslashes work).               #
+# =========================================================================== #
+
+# Folder where you put the monthly source files (CSV and Excel exports).
+DEFAULT_SOURCE = Path(r"C:\DeLaval Scorecard\Source Files")                      # <-- CHANGE
+
+# The single Excel file this script creates. Power BI reads this file.
+DEFAULT_OUTPUT = Path(r"C:\DeLaval Scorecard\Data\Scorecard_Data.xlsx")          # <-- CHANGE
+
+# Folder with agent_aliases.csv and settings.json.
+CONFIG_DIR = Path(r"C:\DeLaval Scorecard\config")                                 # <-- CHANGE
+
+# Power BI project file that stores the "DataFile" parameter. The script writes
+# DEFAULT_OUTPUT into it so Power BI finds the data. Set it to None to skip this.
+MODEL_EXPRESSIONS = Path(r"C:\DeLaval Scorecard\DeLaval Scorecard DB.SemanticModel\definition\expressions.tmdl")  # <-- CHANGE
+
+# =========================================================================== #
 
 LOG: list[tuple[str, str]] = []
 
@@ -798,7 +812,10 @@ def write_workbook(path: Path, tables: dict[str, pd.DataFrame]):
 
 def update_model_path(output: Path):
     """Point the Power BI 'DataFile' parameter at the workbook on this computer."""
-    if not MODEL_EXPRESSIONS.exists():
+    if MODEL_EXPRESSIONS is None or not MODEL_EXPRESSIONS.exists():
+        if MODEL_EXPRESSIONS is not None:
+            log("WARNING", f"Power BI project file not found ({MODEL_EXPRESSIONS}) - set the DataFile "
+                           "parameter in Power BI yourself (Transform data > Edit parameters).")
         return
     text = MODEL_EXPRESSIONS.read_text(encoding="utf-8")
     new = re.sub(r'(expression DataFile = )"[^"]*"', lambda m: m.group(1) + '"' + str(output).replace('"', '""') + '"', text)
@@ -817,6 +834,10 @@ def main(argv=None):
                    help="Do not write the output path into the Power BI project.")
     args = p.parse_args(argv)
 
+    for label, folder in (("Source files folder (DEFAULT_SOURCE)", args.source), ("Config folder (CONFIG_DIR)", CONFIG_DIR)):
+        if not Path(folder).is_dir():
+            raise SystemExit(f"ERROR: {label} not found: {folder}\n"
+                             "Open scripts/prepare_scorecard_data.py and set the paths at the top of the file.")
     settings = load_settings()
     names = Names(load_aliases())
     files = discover(args.source.resolve())
