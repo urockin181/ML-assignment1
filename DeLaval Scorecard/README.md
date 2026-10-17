@@ -24,7 +24,7 @@ writes **one** workbook (`Data/Scorecard_Data.xlsx`). Power BI reads only that w
 
 1. Install Python 3.10 or newer from python.org. During setup, tick **Add python.exe to PATH**.
 2. Open a command prompt in this folder and run: `pip install -r requirements.txt`
-3. Open `scripts/prepare_scorecard_data.py` and set the four paths in the **PATHS** block at the
+3. Open `scripts/prepare_scorecard_data.py` and set the three paths in the **PATHS** block at the
    top of the file (each is marked `# <-- CHANGE`):
 
    | Setting | What it points to |
@@ -32,7 +32,6 @@ writes **one** workbook (`Data/Scorecard_Data.xlsx`). Power BI reads only that w
    | `DEFAULT_SOURCE` | the folder with the monthly source files |
    | `DEFAULT_OUTPUT` | the `Scorecard_Data.xlsx` file the script creates (Power BI reads it) |
    | `CONFIG_DIR` | the `config` folder (`agent_aliases.csv`, `settings.json`) |
-   | `MODEL_EXPRESSIONS` | `DeLaval Scorecard DB.SemanticModel\definition\expressions.tmdl` (or `None`) |
 
    They are preset to `C:\DeLaval Scorecard\...`. If you put the folder exactly there, you
    don't need to change anything.
@@ -73,9 +72,11 @@ writes **one** workbook (`Data/Scorecard_Data.xlsx`). Power BI reads only that w
    incomplete. The same messages are saved in the **Log** sheet of `Data/Scorecard_Data.xlsx`.
 4. Open `DeLaval Scorecard DB.pbip` and click **Refresh**. Save.
 
-The script also points the Power BI parameter **DataFile** at `Data/Scorecard_Data.xlsx` on
-your computer. To keep the workbook somewhere else (for example SharePoint or OneDrive), change
-it under **Transform data > Edit parameters > DataFile**.
+Power BI finds the data through its parameter **DataFile**: the full path to
+`Scorecard_Data.xlsx`, which must be the same as `DEFAULT_OUTPUT` in the script. It is preset to
+`C:\DeLaval Scorecard\Data\Scorecard_Data.xlsx`. If your file is somewhere else, set it once under
+**Transform data > Edit parameters > DataFile**, then save. The dashboard (`.pbip` or `.pbix`)
+remembers it.
 
 ## Who appears where
 
@@ -128,8 +129,8 @@ The hidden pages (Page 1–4, L1 Chat) were copied as they were.
 ## Troubleshooting
 
 - **"more than one … file"**: two files of the same kind are in `Source Files/`. Remove the old one.
-- **Power BI can't find the file**: run the script once on this computer, or set the
-  `DataFile` parameter yourself.
+- **Power BI can't find the file**: set the `DataFile` parameter (Transform data > Edit
+  parameters) to the same path as `DEFAULT_OUTPUT` in the script.
 - **A table on the dashboard is empty**: check the Log sheet. Usually the export for that part
   doesn't contain the report month.
 - **Incident Management shows another month's figures**: the workbook has no sheet for the

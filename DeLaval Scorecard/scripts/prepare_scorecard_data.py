@@ -4,7 +4,8 @@ DeLaval Scorecard - monthly data preparation.
 Reads every raw export in "Source Files", applies the cleaning rules the
 Power BI report used to apply in Power Query, keeps only the report month and
 writes ONE workbook (Data/Scorecard_Data.xlsx) with one sheet per model table.
-The Power BI project reads only that workbook.
+The Power BI dashboard reads only that workbook (its "DataFile" parameter
+must point to the same file as DEFAULT_OUTPUT below).
 
 Usage (from the "DeLaval Scorecard" folder):
     python scripts/prepare_scorecard_data.py                  # month taken from the source files
@@ -46,10 +47,6 @@ DEFAULT_OUTPUT = Path(r"C:\DeLaval Scorecard\Data\Scorecard_Data.xlsx")         
 
 # Folder with agent_aliases.csv and settings.json.
 CONFIG_DIR = Path(r"C:\DeLaval Scorecard\config")                                 # <-- CHANGE
-
-# Power BI project file that stores the "DataFile" parameter. The script writes
-# DEFAULT_OUTPUT into it so Power BI finds the data. Set it to None to skip this.
-MODEL_EXPRESSIONS = Path(r"C:\DeLaval Scorecard\DeLaval Scorecard DB.SemanticModel\definition\expressions.tmdl")  # <-- CHANGE
 
 # =========================================================================== #
 
@@ -810,28 +807,11 @@ def write_workbook(path: Path, tables: dict[str, pd.DataFrame]):
     tmp.replace(path)
 
 
-def update_model_path(output: Path):
-    """Point the Power BI 'DataFile' parameter at the workbook on this computer."""
-    if MODEL_EXPRESSIONS is None or not MODEL_EXPRESSIONS.exists():
-        if MODEL_EXPRESSIONS is not None:
-            log("WARNING", f"Power BI project file not found ({MODEL_EXPRESSIONS}) - set the DataFile "
-                           "parameter in Power BI yourself (Transform data > Edit parameters).")
-        return
-    text = MODEL_EXPRESSIONS.read_text(encoding="utf-8")
-    new = re.sub(r'(expression DataFile = )"[^"]*"', lambda m: m.group(1) + '"' + str(output).replace('"', '""') + '"', text)
-    if new != text:
-        MODEL_EXPRESSIONS.write_text(new, encoding="utf-8")
-        log("INFO", f"Power BI parameter 'DataFile' now points to: {output}")
-
-
-# --------------------------------------------------------------------------- #
 def main(argv=None):
     p = argparse.ArgumentParser(description="Prepare the DeLaval Scorecard data for one month.")
     p.add_argument("--month", help="Report month as YYYY-MM (default: the latest month found in the source files).")
     p.add_argument("--source", type=Path, default=DEFAULT_SOURCE, help="Folder with the raw source files.")
     p.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help="Workbook to create.")
-    p.add_argument("--no-update-model-path", action="store_true",
-                   help="Do not write the output path into the Power BI project.")
     args = p.parse_args(argv)
 
     for label, folder in (("Source files folder (DEFAULT_SOURCE)", args.source), ("Config folder (CONFIG_DIR)", CONFIG_DIR)):
@@ -902,10 +882,8 @@ def main(argv=None):
     tables["Log"] = pd.DataFrame(LOG, columns=["Level", "Message"])
     out = args.output.resolve()
     write_workbook(out, tables)
-    if not args.no_update_model_path:
-        update_model_path(out)
     print(f"\nDone. Workbook written to: {out}")
-    print("Open 'DeLaval Scorecard DB.pbip' in Power BI Desktop and click Refresh.")
+    print("Open the dashboard in Power BI Desktop and click Refresh.")
     return 0
 
 
