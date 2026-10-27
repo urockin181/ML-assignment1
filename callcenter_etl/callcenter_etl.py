@@ -29,19 +29,21 @@ be re-run at any time without creating duplicates. One exception: a row from
 an interval that is still in progress (Interval Complete = FALSE) never
 replaces a row from a completed interval.
 
-Any input can be omitted. Its sheet is then carried over unchanged, so a
-daily run can supply only the two agent files.
+Input folders
+-------------
+Set the four input folders and the output folder in the block marked
+">>> EDIT YOUR FOLDER PATHS HERE <<<" below. Each run processes every CSV in
+those folders that has not been processed before (oldest first) and records it
+in <output>/processed_files.json. A file that is overwritten with new content is
+processed again. An export type with no new files keeps its sheet unchanged.
 
 Usage
 -----
-    python callcenter_etl.py \
-        --service-level AudiQPer-Oct26.csv \
-        --abandoned AudiAban-Oct26.csv \
-        --agent-status AgentsSTA-26Oct26.csv \
-        --agent-performance AgentsPer-26Oct26.csv \
-        --output-dir output
+    python callcenter_etl.py                      # uses the folders set below
+    python callcenter_etl.py --reprocess-all      # process every file again
+    python callcenter_etl.py --files-only --agent-status AgentsSTA-26Oct26.csv   # one file
 
-Run with --help for all options. Defaults live in the Config class below.
+Run with --help for all options. Other defaults live in the Config class below.
 
 Outputs (in --output-dir)
 -------------------------
@@ -58,6 +60,7 @@ from __future__ import annotations
 import argparse
 import csv
 import io
+import json
 import logging
 import re
 import shutil
@@ -73,19 +76,49 @@ log = logging.getLogger("callcenter_etl")
 
 
 # =============================================================================
+# >>> EDIT YOUR FOLDER PATHS HERE <<<
+#
+# One folder per export type. Every day, drop the new CSV into its folder and
+# run the script: it processes every CSV it has not processed before (oldest
+# first) and adds it to the output workbook. Processed files are remembered in
+# <OUTPUT_FOLDER>/processed_files.json, so nothing is loaded twice.
+#
+# Use the full path inside r"..." (the r keeps Windows backslashes intact).
+# Leave a path empty ("") to skip that export type.
+# =============================================================================
+SERVICE_LEVEL_FOLDER = r"C:\CallCenter\input\queue_performance"        # e.g. AudiQPer-*.csv
+ABANDONED_FOLDER = r"C:\CallCenter\input\abandoned_calls"               # e.g. AudiAban-*.csv
+AGENT_STATUS_FOLDER = r"C:\CallCenter\input\agent_status"               # e.g. AgentsSTA-*.csv
+AGENT_PERFORMANCE_FOLDER = r"C:\CallCenter\input\agent_performance"     # e.g. AgentsPer-*.csv
+
+OUTPUT_FOLDER = r"C:\CallCenter\output"   # callcenter_powerbi_clean.xlsx is written here
+
+
+# =============================================================================
 # Configuration
 # =============================================================================
 @dataclass
 class Config:
     """All settings in one place. Command-line arguments override these."""
 
-    # Input files. None = not supplied this run (its sheet keeps its history).
+    # Input folders (set at the top of this file, or with --*-dir options).
+    # Every CSV in a folder that was not processed before is processed.
+    service_level_dir: str = SERVICE_LEVEL_FOLDER
+    abandoned_dir: str = ABANDONED_FOLDER
+    agent_status_dir: str = AGENT_STATUS_FOLDER
+    agent_performance_dir: str = AGENT_PERFORMANCE_FOLDER
+
+    # Optional single files (command line only); always processed when given.
     service_level_csv: Path | None = None
     abandoned_csv: Path | None = None
     agent_status_csv: Path | None = None
     agent_performance_csv: Path | None = None
 
-    output_dir: Path = Path("output")
+    # True = ignore processed_files.json and process every file in the folders again.
+    reprocess_all: bool = False
+    manifest_name: str = "processed_files.json"
+
+    output_dir: Path = Path(OUTPUT_FOLDER)
     output_workbook_name: str = "callcenter_powerbi_clean.xlsx"
 
     # Mandatory skill filter for the two agent files.
@@ -1489,15 +1522,60 @@ def write_workbook(path: Path, sheets: dict[str, pd.DataFrame], keep_backup: boo
 # Orchestration
 # =============================================================================
 PROCESSORS = {
-    "service_level": ("service_level_csv", process_service_level),
-    "abandoned": ("abandoned_csv", process_abandoned),
-    "agent_status": ("agent_status_csv", process_agent_status),
-    "agent_performance": ("agent_performance_csv", process_agent_performance),
+    "service_level": ("service_level_csv", "service_level_dir", process_service_level),
+    "abandoned": ("abandoned_csv", "abandoned_dir", process_abandoned),
+    "agent_status": ("agent_status_csv", "agent_status_dir", process_agent_status),
+    "agent_performance": ("agent_performance_csv", "agent_performance_dir", process_agent_performance),
 }
 
 
+def file_signature(path: Path) -> list:
+    """Size + modification time: a file that is replaced with new content is processed again."""
+    st_ = path.stat()
+    return [st_.st_size, st_.st_mtime_ns]
+
+
+def load_manifest(path: Path) -> dict:
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise SystemExit(f"Cannot read {path} ({exc}). Fix or delete it (all files are then processed again).")
+
+
+def save_manifest(path: Path, manifest: dict) -> None:
+    tmp = path.with_suffix(".tmp")
+    tmp.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(path)
+
+
+def collect_inputs(name: str, cfg: Config, manifest: dict, dq: QualityReport) -> list[Path]:
+    """Files to process for one export type: the single file (if given) + new files in the folder."""
+    file_attr, dir_attr, _ = PROCESSORS[name]
+    files: list[Path] = []
+    single = getattr(cfg, file_attr)
+    if single:
+        files.append(Path(single))
+    folder = getattr(cfg, dir_attr)
+    if folder:
+        d = Path(folder)
+        if not d.is_dir():
+            dq.add(name, "Input folder not found", "ERROR", detail=str(d))
+            return files
+        csvs = [f for f in d.iterdir()
+                if f.is_file() and f.suffix.lower() == ".csv" and not f.name.startswith(("~$", "."))]
+        csvs.sort(key=lambda f: (f.stat().st_mtime, f.name))   # oldest first, newest wins
+        done = manifest.get(name, {})
+        new = [f for f in csvs if cfg.reprocess_all or done.get(str(f.resolve()), {}).get("signature") != file_signature(f)]
+        dq.add(name, f"Folder {d}", "INFO",
+               detail=f"{len(csvs)} CSV files, {len(new)} new or changed, {len(csvs) - len(new)} already processed")
+        files += new
+    return files
+
+
 def run(cfg: Config) -> int:
-    """Process all supplied files and write outputs. Returns an exit code."""
+    """Process all new input files and write outputs. Returns an exit code."""
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = cfg.output_dir / f"etl_{stamp}.log"
@@ -1508,75 +1586,98 @@ def run(cfg: Config) -> int:
     dq = QualityReport()
     load_ts = pd.Timestamp.now().floor("s")
     wb_path = cfg.output_dir / cfg.output_workbook_name
+    manifest_path = cfg.output_dir / cfg.manifest_name
+    if not cfg.append_history:
+        cfg.reprocess_all = True          # rebuilding: every file in the folders is needed
+    manifest = {} if cfg.reprocess_all else load_manifest(manifest_path)
     existing = load_existing_workbook(wb_path) if cfg.append_history else {}
     if existing:
         log.info("Existing workbook found: %s (%s)", wb_path,
                  ", ".join(f"{k}: {len(v)} rows" for k, v in existing.items()))
 
-    supplied = [k for k, (attr, _) in PROCESSORS.items() if getattr(cfg, attr)]
-    if not supplied:
-        log.error("No input files supplied. Use --service-level/--abandoned/--agent-status/"
-                  "--agent-performance or set them in Config.")
+    configured = [k for k, (fa, da, _) in PROCESSORS.items() if getattr(cfg, fa) or getattr(cfg, da)]
+    if not configured:
+        log.error("No input folders or files set. Edit the folder paths at the top of callcenter_etl.py "
+                  "or use --service-level-dir/--abandoned-dir/--agent-status-dir/--agent-performance-dir.")
         return 1
 
     final: dict[str, pd.DataFrame] = {}
-    failed = []
-    for name, (attr, func) in PROCESSORS.items():
-        sheet = SHEETS[name]
-        old = existing.get(sheet)
-        path = getattr(cfg, attr)
-        if not path:
-            if old is not None:
-                final[name] = old
-                dq.add(name, "No new file supplied - existing sheet kept unchanged", "INFO", len(old))
+    failed: list[str] = []
+    processed: dict[str, list[Path]] = {}
+    for name, (_, _, func) in PROCESSORS.items():
+        current = existing.get(SHEETS[name])
+        paths = collect_inputs(name, cfg, manifest, dq)
+        if not paths:
+            if current is not None:
+                final[name] = current
+                dq.add(name, "No new files - existing sheet kept unchanged", "INFO", len(current))
             continue
-        log.info("=== Processing %s: %s ===", name, path)
-        try:
-            new = func(Path(path), cfg, dq, load_ts)
-            drop = [c for c in cfg.drop_columns.get(name, []) if c in new.columns]
-            new = new.drop(columns=drop)
-            merged = merge_with_history(name, new, old, dq)
-            if name == "agent_status":
-                merged = finalize_agent_status(merged)
-            elif name == "agent_performance":
-                merged = finalize_agent_performance(merged)
-            merged = merged.sort_values([c for c in SORT_KEYS[name] if c in merged.columns],
-                                        kind="stable").reset_index(drop=True)
-            final[name] = merged
-            dq.set_summary(name, rows_in_sheet=len(merged))
-        except DatasetError as exc:
-            failed.append(name)
-            dq.add(name, "Dataset could not be processed", "ERROR", detail=str(exc))
-            if old is not None:
-                final[name] = old
-                dq.add(name, "Existing sheet kept unchanged because of the error above", "WARNING", len(old))
+        for path in paths:
+            log.info("=== Processing %s: %s ===", name, path)
+            try:
+                new = func(Path(path), cfg, dq, load_ts)
+                drop = [c for c in cfg.drop_columns.get(name, []) if c in new.columns]
+                new = new.drop(columns=drop)
+                merged = merge_with_history(name, new, current, dq)
+                if name == "agent_status":
+                    merged = finalize_agent_status(merged)
+                elif name == "agent_performance":
+                    merged = finalize_agent_performance(merged)
+                current = merged.sort_values([c for c in SORT_KEYS[name] if c in merged.columns],
+                                             kind="stable").reset_index(drop=True)
+                processed.setdefault(name, []).append(Path(path))
+            except DatasetError as exc:
+                failed.append(f"{name}: {Path(path).name}")
+                dq.add(name, f"File could not be processed: {Path(path).name}", "ERROR", detail=str(exc))
+        if current is not None:
+            final[name] = current
+            dq.set_summary(name, files_processed=len(processed.get(name, [])), rows_in_sheet=len(current))
 
     cross_checks({k: v for k, v in final.items()}, dq)
 
     sheets = {SHEETS[k]: final[k] for k in PROCESSORS if k in final}
-    if sheets:
+    if processed and sheets:
         write_workbook(wb_path, sheets, cfg.keep_backup)
         log.info("Workbook written: %s", wb_path)
+        # Remember the files only after the workbook was saved, so a failed run retries them.
+        for name, paths in processed.items():
+            for pth in paths:
+                manifest.setdefault(name, {})[str(pth.resolve())] = {
+                    "signature": file_signature(pth), "processed_at": datetime.now().isoformat(timespec="seconds")}
+        save_manifest(manifest_path, manifest)
+    elif not processed:
+        log.info("No new files to process - workbook left unchanged: %s", wb_path)
     md, csv_path = dq.write(cfg.output_dir, stamp)
     log.info("Data-quality report: %s", md)
     log.info("Check table: %s", csv_path)
     log.info("Log file: %s", log_path)
     n_err = sum(r["status"] == "ERROR" for r in dq.rows)
     n_warn = sum(r["status"] == "WARNING" for r in dq.rows)
-    log.info("Finished: %d errors, %d warnings%s", n_err, n_warn,
-             f"; FAILED datasets: {', '.join(failed)}" if failed else "")
+    log.info("Finished: %d files processed, %d errors, %d warnings%s",
+             sum(len(v) for v in processed.values()), n_err, n_warn,
+             f"; FAILED: {', '.join(failed)}" if failed else "")
     log.removeHandler(fh)
     fh.close()
-    return 2 if failed else 0
+    folder_missing = any(r["check"] == "Input folder not found" for r in dq.rows)
+    return 2 if failed or folder_missing else 0
 
 
 def parse_args(argv: list[str] | None = None) -> Config:
     cfg = Config()
     p = argparse.ArgumentParser(description="Clean Genesys call-center exports for Power BI.")
-    p.add_argument("--service-level", type=Path, help="Queue performance CSV (file 1)")
-    p.add_argument("--abandoned", type=Path, help="Conversation detail / abandoned CSV (file 2)")
-    p.add_argument("--agent-status", type=Path, help="Agent status CSV (file 3)")
-    p.add_argument("--agent-performance", type=Path, help="Agent performance CSV (file 4)")
+    p.add_argument("--service-level-dir", help="Folder with queue performance CSVs (overrides SERVICE_LEVEL_FOLDER)")
+    p.add_argument("--abandoned-dir", help="Folder with call detail CSVs (overrides ABANDONED_FOLDER)")
+    p.add_argument("--agent-status-dir", help="Folder with agent status CSVs (overrides AGENT_STATUS_FOLDER)")
+    p.add_argument("--agent-performance-dir", help="Folder with agent performance CSVs "
+                                                   "(overrides AGENT_PERFORMANCE_FOLDER)")
+    p.add_argument("--service-level", type=Path, help="A single queue performance CSV (file 1)")
+    p.add_argument("--abandoned", type=Path, help="A single call detail / abandoned CSV (file 2)")
+    p.add_argument("--agent-status", type=Path, help="A single agent status CSV (file 3)")
+    p.add_argument("--agent-performance", type=Path, help="A single agent performance CSV (file 4)")
+    p.add_argument("--files-only", action="store_true",
+                   help="Ignore the folders set at the top of the script; process only the files given")
+    p.add_argument("--reprocess-all", action="store_true",
+                   help="Process every file in the folders again, even if processed before")
     p.add_argument("--output-dir", type=Path, default=cfg.output_dir)
     p.add_argument("--output-name", default=cfg.output_workbook_name)
     p.add_argument("--skill", default=cfg.target_skill)
@@ -1586,6 +1687,14 @@ def parse_args(argv: list[str] | None = None) -> Config:
     p.add_argument("--drop-caller-number", action="store_true",
                    help="Remove the caller phone number ('remote') from abandoned_calls_clean")
     a = p.parse_args(argv)
+    if a.files_only:
+        cfg.service_level_dir = cfg.abandoned_dir = cfg.agent_status_dir = cfg.agent_performance_dir = ""
+    cfg.service_level_dir = a.service_level_dir if a.service_level_dir is not None else cfg.service_level_dir
+    cfg.abandoned_dir = a.abandoned_dir if a.abandoned_dir is not None else cfg.abandoned_dir
+    cfg.agent_status_dir = a.agent_status_dir if a.agent_status_dir is not None else cfg.agent_status_dir
+    cfg.agent_performance_dir = (a.agent_performance_dir if a.agent_performance_dir is not None
+                                 else cfg.agent_performance_dir)
+    cfg.reprocess_all = a.reprocess_all
     cfg.service_level_csv = a.service_level or cfg.service_level_csv
     cfg.abandoned_csv = a.abandoned or cfg.abandoned_csv
     cfg.agent_status_csv = a.agent_status or cfg.agent_status_csv

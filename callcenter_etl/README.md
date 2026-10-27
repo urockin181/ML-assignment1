@@ -35,27 +35,57 @@ every check (`data_quality_checks_<time>.csv`), a log file, and a backup of the 
 
 ```bash
 pip install pandas openpyxl
-
-# Monthly queue files + daily agent files
-python callcenter_etl.py \
-  --service-level AudiQPer-Oct26.csv \
-  --abandoned AudiAban-Oct26.csv \
-  --agent-status AgentsSTA-26Oct26.csv \
-  --agent-performance AgentsPer-26Oct26.csv \
-  --output-dir output
-
-# Next day: only the new agent files. The queue sheets are kept as they are.
-python callcenter_etl.py --agent-status AgentsSTA-27Oct26.csv \
-  --agent-performance AgentsPer-27Oct26.csv --output-dir output
 ```
 
-Options: `--skill "GL AUDI EHD"`, `--skill-match token|exact`, `--no-history` (rebuild the
-workbook from scratch), `--drop-caller-number` (remove the caller phone number column),
-`--output-name`. All other settings (date formats, tolerances, blank handling) are in the
-`Config` class at the top of the script.
+### 1. Set your folders (once)
 
-Exit codes: 0 = success, 2 = at least one file could not be processed (its sheet is kept
-unchanged and the reason is in the report), 1 = fatal error (e.g. the workbook is open in Excel).
+Open `callcenter_etl.py` and edit the block near the top marked
+**`>>> EDIT YOUR FOLDER PATHS HERE <<<`**:
+
+```python
+SERVICE_LEVEL_FOLDER = r"C:\CallCenter\input\queue_performance"     # AudiQPer-*.csv files
+ABANDONED_FOLDER = r"C:\CallCenter\input\abandoned_calls"            # AudiAban-*.csv files
+AGENT_STATUS_FOLDER = r"C:\CallCenter\input\agent_status"            # AgentsSTA-*.csv files
+AGENT_PERFORMANCE_FOLDER = r"C:\CallCenter\input\agent_performance"  # AgentsPer-*.csv files
+
+OUTPUT_FOLDER = r"C:\CallCenter\output"   # callcenter_powerbi_clean.xlsx goes here
+```
+
+Replace the paths with your real folders and keep the `r` in front of the quotes. Point the
+Power BI `ExcelFilePath` parameter at `OUTPUT_FOLDER\callcenter_powerbi_clean.xlsx`.
+
+### 2. Every day
+
+Save each new export into its folder, then run:
+
+```bash
+python callcenter_etl.py
+```
+
+- Every CSV in the four folders that has **not been processed before** is processed, oldest
+  first, and added to the workbook.
+- Processed files are remembered in `OUTPUT_FOLDER\processed_files.json`, so running twice never
+  loads a file twice. A file that is overwritten with new content is processed again.
+- If you missed a few days, all waiting files are processed in one run.
+- A folder with no new file keeps its sheet unchanged.
+- A file is marked as processed only after the workbook was saved. If a run fails, the file is
+  picked up again next time.
+
+### Other options
+
+```bash
+python callcenter_etl.py --reprocess-all     # process every file in the folders again (no duplicates)
+python callcenter_etl.py --no-history        # rebuild the workbook from scratch from all files
+python callcenter_etl.py --agent-status-dir "D:\exports\status"   # override one folder for this run
+python callcenter_etl.py --files-only --agent-status AgentsSTA-26Oct26.csv   # just one file, ignore folders
+```
+
+Other options: `--skill "GL AUDI EHD"`, `--skill-match token|exact`, `--drop-caller-number`
+(remove the caller phone number column), `--output-dir`, `--output-name`. All other settings
+(date formats, tolerances, blank handling) are in the `Config` class.
+
+Exit codes: 0 = success, 2 = a folder was not found or a file could not be processed (its sheet is
+kept unchanged and the reason is in the report), 1 = fatal error (e.g. the workbook is open in Excel).
 
 ## How appending works (past + new dates)
 
