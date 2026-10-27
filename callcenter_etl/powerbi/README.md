@@ -34,6 +34,7 @@ never have to change the filter. The "Showing" tile next to it shows the actual 
   later than the queue data, so the two pages can show different dates.
 - To look at other days, open the Day filter and pick one or several dates (Ctrl+click).
   Dates after the latest day are listed as "No data yet".
+- Exception: the "Service Level by day" chart always shows the whole latest month.
 
 ## Pages
 
@@ -41,8 +42,9 @@ never have to change the filter. The "Showing" tile next to it shows the actual 
 - Header with the Day filter (default "Latest day") and the "Showing" date tile.
 - KPI tiles: Offered, Answered, Abandoned and Abandon % (green within 5 %, red above),
   Service Level % (green from 80 %, red below), Avg Speed of Answer.
-- Daily Service Level: one bar per day, green when the day meets 80 %, red when below.
-  Hovering shows Offered, Answered, Abandoned and Abandon %.
+- Service Level by day for the **whole latest month** (every day of the month on the axis):
+  green when the day meets 80 %, red when below. This chart ignores the Day filter so the month
+  trend is always visible. Hovering shows Offered, Answered, Abandoned and Abandon %.
 - Gauge: Service Level against the 80 % target (black line), green or red.
 - Calls by hour, with the number of calls on each bar: green when that hour's abandon rate is
   within 5 %, red when above.
