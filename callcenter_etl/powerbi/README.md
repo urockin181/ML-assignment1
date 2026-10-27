@@ -15,31 +15,34 @@
    `callcenter_powerbi_clean.xlsx`, e.g. `C:\CallCenter\output\callcenter_powerbi_clean.xlsx`.
 4. Click **Refresh**. Each time `callcenter_etl.py` adds a new day, click Refresh again.
 
+## Design
+
+Audi-style theme (custom theme `AudiEHD.json` inside the project): black header bar with an
+Audi-red line, light silver page, white rounded tiles. Black means on target, **Audi red means
+alert**, and silver/grey means unknown. Each page fits one 16:9 screen with no scrolling.
+
 ## Pages
 
 ### 1. Queue Overview (sheets `service_level_metrics_clean` + `abandoned_calls_clean`)
-- Date range slicer.
-- Cards: Offered, Answered, Abandoned, Service Level %, Abandon %, Calls Within SLA,
-  Avg Speed of Answer, Avg Time to Abandon.
-- Daily combo chart: Offered / Answered / Abandoned (columns), Service Level % and Abandon % (lines).
-- Calls and abandoned calls by hour of day (from the call detail).
-- Daily summary table. Service Level % turns red below target (80 %), and Abandon % turns red
-  above target (5 %).
-- List of abandoned calls with the caller's wait time before hanging up.
+- Header with a date range slicer.
+- KPI tiles: Offered, Answered, Abandoned, Abandon % (red above 5 %), Service Level % (red
+  below 80 %), Avg Speed of Answer.
+- Daily calls (answered in black, abandoned stacked in red) with a Service Level % line.
+- Gauge: Service Level against the 80 % target.
+- Calls by hour of day (silver) with abandoned calls (red).
+- Compact list of abandoned calls, newest first.
 
-### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`)
-- Date range slicer and agent drop-down.
-- Cards: Agents Logged In, Logged In time, Allowed Status %, **Non-Allowed Status Time (red)**,
-  Answered, Handled, AHT.
-- Stacked bar per agent: hours in each status. Allowed statuses are blue/green, non-allowed
-  statuses are shades of red, unknown status is grey.
-- Donut: share of time in On Queue, Available, Break, Meeting, Training, Non-Allowed (red) and
-  Unknown (grey).
-- Status table, one row per agent, times as hh:mm:ss. Every non-allowed column gets a **red
-  cell** when the agent spent any time in that status. The *Unknown (Other Off-Queue)* column
-  turns grey when it has time. *Allowed %* is red below target (90 %).
-- Performance table: Answered, Handled, AHT, Avg Talk / Hold / ACW, Held, Transferred.
-- Bar chart: answered and handled calls by agent.
+### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`), compliance first
+- Header with date range and agent slicers.
+- KPI tiles: Allowed status % (red below 90 %), Non-allowed time (red), Unknown status time
+  (grey), Agents logged in, Answered, Avg Handle Time.
+- Ranking of agents by non-allowed hours (red bars). Hovering over a bar shows the split into
+  Away / Meal / Busy / Not Responding.
+- Status mix per agent: share of logged-in time that is allowed (black), not allowed (red) and
+  unknown (grey).
+- Compact agent scorecard sorted by non-allowed time: Logged in, Allowed %, Non-allowed (red cell),
+  Unknown (grey cell), Answered, Handled, AHT.
+- Agents with the skill who never logged in are hidden on this page.
 
 ## Status rules
 
