@@ -1,0 +1,8 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/page/1.4.0/schema.json",
+  "name": "504bfa4da152221346bc",
+  "displayName": "Agents",
+  "displayOption": "FitToWidth",
+  "height": 1110,
+  "width": 1280
+}

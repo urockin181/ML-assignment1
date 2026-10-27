@@ -1,0 +1,487 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "b4b34647fe72f23e5678",
+  "position": {
+    "x": 16,
+    "y": 526,
+    "z": 12000,
+    "height": 330,
+    "width": 1248,
+    "tabOrder": 12000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "Agents"
+                    }
+                  },
+                  "Property": "agent_name"
+                }
+              },
+              "queryRef": "Agents.agent_name",
+              "displayName": "Agent"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Logged In Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Logged In Time",
+              "displayName": "Logged In"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "On Queue Time"
+                }
+              },
+              "queryRef": "agent_status_clean.On Queue Time",
+              "displayName": "On Queue"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Idle Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Idle Time",
+              "displayName": "Idle"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Available Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Available Time",
+              "displayName": "Available"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Break Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Break Time",
+              "displayName": "Break"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Meeting Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Meeting Time",
+              "displayName": "Meeting"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Training Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Training Time",
+              "displayName": "Training"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Not Responding Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Not Responding Time",
+              "displayName": "Not Responding"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Away Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Away Time",
+              "displayName": "Away"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Meal Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Meal Time",
+              "displayName": "Meal"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Busy Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Busy Time",
+              "displayName": "Busy"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Other Off-Queue Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Other Off-Queue Time",
+              "displayName": "Other Off-Queue"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Non-Allowed Time"
+                }
+              },
+              "queryRef": "agent_status_clean.Non-Allowed Time",
+              "displayName": "Non-Allowed total"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_status_clean"
+                    }
+                  },
+                  "Property": "Allowed Status %"
+                }
+              },
+              "queryRef": "agent_status_clean.Allowed Status %",
+              "displayName": "Allowed %"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "Agents"
+                  }
+                },
+                "Property": "agent_name"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "objects": {
+      "values": [
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Not Responding CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Not Responding Time"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Away CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Away Time"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Meal CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Meal Time"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Busy CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Busy Time"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Other Off-Queue CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Other Off-Queue Time"
+          }
+        },
+        {
+          "properties": {
+            "backColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Non-Allowed CF Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Non-Allowed Time"
+          }
+        },
+        {
+          "properties": {
+            "fontColor": {
+              "solid": {
+                "color": {
+                  "expr": {
+                    "Measure": {
+                      "Expression": {
+                        "SourceRef": {
+                          "Entity": "agent_status_clean"
+                        }
+                      },
+                      "Property": "Allowed Status % Color"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "selector": {
+            "data": [
+              {
+                "dataViewWildcard": {
+                  "matchingOption": 1
+                }
+              }
+            ],
+            "metadata": "agent_status_clean.Allowed Status %"
+          }
+        }
+      ]
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Agent status time (hh:mm:ss). Red = time in a status outside On Queue / Idle / Available / Break / Meeting / Training'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

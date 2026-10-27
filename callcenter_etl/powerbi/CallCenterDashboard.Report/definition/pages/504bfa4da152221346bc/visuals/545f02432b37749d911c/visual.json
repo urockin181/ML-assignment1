@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "545f02432b37749d911c",
+  "position": {
+    "x": 913.1428571428571,
+    "y": 74,
+    "z": 8000,
+    "height": 92,
+    "width": 171.42857142857142,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_performance_clean"
+                    }
+                  },
+                  "Property": "Handled (Agents)"
+                }
+              },
+              "queryRef": "agent_performance_clean.Handled (Agents)",
+              "displayName": "Handled"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "20D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

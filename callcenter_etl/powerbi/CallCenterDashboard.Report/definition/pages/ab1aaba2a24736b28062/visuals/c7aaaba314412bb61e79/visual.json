@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "c7aaaba314412bb61e79",
+  "position": {
+    "x": 958.0,
+    "y": 74,
+    "z": 8000,
+    "height": 92,
+    "width": 149.0,
+    "tabOrder": 8000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "service_level_metrics_clean"
+                    }
+                  },
+                  "Property": "ASA"
+                }
+              },
+              "queryRef": "service_level_metrics_clean.ASA",
+              "displayName": "Avg Speed of Answer"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "20D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,1056 @@
+table agent_status_clean
+	lineageTag: 48778949-dc23-b139-a081-02dd2e78fc35
+
+	measure 'Logged In Sec' = ```
+			SUM ( agent_status_clean[logged_in_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 052cf747-bf3d-3757-44b4-14647b44b10a
+
+	measure 'On Queue Sec' = ```
+			SUM ( agent_status_clean[on_queue_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: afe8ea89-73e0-cc38-d5b2-fd4c44f236a5
+
+	measure 'Off Queue Sec' = ```
+			SUM ( agent_status_clean[off_queue_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 3a044589-a907-efbb-c119-010edef9f186
+
+	measure 'Idle Sec' = ```
+			SUM ( agent_status_clean[idle_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 8b2ef165-e2a4-60bb-9764-9349de31b87d
+
+	measure 'Not Responding Sec' = ```
+			SUM ( agent_status_clean[not_responding_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 4be03e66-d2d2-8092-4ab2-db28b1537da8
+
+	measure 'Available Sec' = ```
+			SUM ( agent_status_clean[available_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 094ce972-3b60-ae9a-2c79-4855491edad4
+
+	measure 'Away Sec' = ```
+			SUM ( agent_status_clean[away_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: df8f58c9-d52e-af3a-2a15-7ea320052e59
+
+	measure 'Break Sec' = ```
+			SUM ( agent_status_clean[break_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 8081291c-ecc9-a4a7-3618-b024e38045ba
+
+	measure 'Meal Sec' = ```
+			SUM ( agent_status_clean[meal_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: e38bd6eb-b7f0-6311-0692-8be3bba4882e
+
+	measure 'Busy Sec' = ```
+			SUM ( agent_status_clean[busy_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: f3ca970f-5fb4-e9af-2af0-2b71dd5cb85e
+
+	measure 'Meeting Sec' = ```
+			SUM ( agent_status_clean[meeting_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 698bc3e4-4e00-c8fc-a68b-5dedd160b4ae
+
+	measure 'Training Sec' = ```
+			SUM ( agent_status_clean[training_seconds] )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 97e58288-294a-dafc-29d2-a8cffb5680ee
+
+	measure 'Other Off-Queue Sec' = ```
+			SUMX ( agent_status_clean, MAX ( 0, agent_status_clean[off_queue_seconds] - ( agent_status_clean[available_seconds] + agent_status_clean[away_seconds] + agent_status_clean[break_seconds] + agent_status_clean[meal_seconds] + agent_status_clean[busy_seconds] + agent_status_clean[meeting_seconds] + agent_status_clean[training_seconds] ) ) )
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 5a60a85b-be91-0c0a-86b3-6ba8a6b6941c
+
+	measure 'Allowed Sec' = ```
+			[On Queue Sec] - [Not Responding Sec] + [Available Sec] + [Break Sec] + [Meeting Sec] + [Training Sec]
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 7fc967a0-46b5-4a35-a0be-deef615e7ee7
+
+	measure 'Non-Allowed Sec' = ```
+			[Not Responding Sec] + [Away Sec] + [Meal Sec] + [Busy Sec] + [Other Off-Queue Sec]
+			```
+		formatString: 0
+		isHidden
+		displayFolder: Seconds
+		lineageTag: 3fab421e-952a-a45a-b49f-41c7d8c75884
+
+	measure 'Logged In Hours' = ```
+			DIVIDE ( [Logged In Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: fc55a068-45b9-df10-ff5e-19b0b1eadb8c
+
+	measure 'Logged In Time' = ```
+			VAR _raw = [Logged In Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: dd79ffa0-62f1-a011-11a8-0dc60b7303cc
+
+	measure 'On Queue Hours' = ```
+			DIVIDE ( [On Queue Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: fe8f9223-dc88-7b35-9ac5-42588bb936f8
+
+	measure 'On Queue Time' = ```
+			VAR _raw = [On Queue Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 13e2159d-bd9a-6d3e-87c2-9efa6348dea2
+
+	measure 'Off Queue Hours' = ```
+			DIVIDE ( [Off Queue Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 2da9af80-80b2-7aed-bc17-2c4d154d6f82
+
+	measure 'Off Queue Time' = ```
+			VAR _raw = [Off Queue Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 930f02d0-90d2-6f83-fe18-48e2005b48b8
+
+	measure 'Idle Hours' = ```
+			DIVIDE ( [Idle Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 02a88c49-d3fd-bc11-2fa1-41084abc4048
+
+	measure 'Idle Time' = ```
+			VAR _raw = [Idle Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: b4c523e3-8a7a-e20d-1c8d-129d5ff1a23d
+
+	measure 'Not Responding Hours' = ```
+			DIVIDE ( [Not Responding Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: b6635a29-7064-5778-e586-ba85a5d216b6
+
+	measure 'Not Responding Time' = ```
+			VAR _raw = [Not Responding Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: e8648cf9-db7c-c0d6-a844-db2fe6deaf18
+
+	measure 'Available Hours' = ```
+			DIVIDE ( [Available Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 54acfbf4-238f-7cda-bac8-cbbc8c42193e
+
+	measure 'Available Time' = ```
+			VAR _raw = [Available Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: fbc13327-e8b8-ce8b-9778-270889ee727a
+
+	measure 'Away Hours' = ```
+			DIVIDE ( [Away Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 1869f57c-3077-7806-1441-c56d930fd490
+
+	measure 'Away Time' = ```
+			VAR _raw = [Away Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: b9d2d6e5-9087-2561-f341-1718df642a97
+
+	measure 'Break Hours' = ```
+			DIVIDE ( [Break Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 6e1a028b-c7db-7fab-1a08-c947cf06e2e5
+
+	measure 'Break Time' = ```
+			VAR _raw = [Break Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: ae0b17c1-38d2-bc50-f045-e40678bceb06
+
+	measure 'Meal Hours' = ```
+			DIVIDE ( [Meal Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 0d3f36da-f564-e32e-46db-d1256c461306
+
+	measure 'Meal Time' = ```
+			VAR _raw = [Meal Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 21a82a45-7030-1ca8-f4bd-10bc5816fecc
+
+	measure 'Busy Hours' = ```
+			DIVIDE ( [Busy Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 97995929-0867-80a6-dbec-5f52ab30e120
+
+	measure 'Busy Time' = ```
+			VAR _raw = [Busy Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 78299d64-0233-857a-f6f9-a1d6da5c8beb
+
+	measure 'Meeting Hours' = ```
+			DIVIDE ( [Meeting Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 5c2d6aec-03d2-5807-f2be-a14f1dfc946b
+
+	measure 'Meeting Time' = ```
+			VAR _raw = [Meeting Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 37b49901-80cf-abb8-b141-f904ccbfc0ae
+
+	measure 'Training Hours' = ```
+			DIVIDE ( [Training Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 693f650a-a4d4-e5b8-8caf-121b8c23159c
+
+	measure 'Training Time' = ```
+			VAR _raw = [Training Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 8b5a3ce3-a75e-0cbf-0203-f25946054363
+
+	measure 'Other Off-Queue Hours' = ```
+			DIVIDE ( [Other Off-Queue Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 059e5147-8ecb-b326-4b19-1e551a52f2f0
+
+	measure 'Other Off-Queue Time' = ```
+			VAR _raw = [Other Off-Queue Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 0e0b9440-2a10-3b2b-f64f-322562c74046
+
+	measure 'Allowed Hours' = ```
+			DIVIDE ( [Allowed Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 3f953d9e-a0f6-7808-d0d1-efd314ae652d
+
+	measure 'Allowed Time' = ```
+			VAR _raw = [Allowed Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: 8b2427dc-2068-ed23-230f-15539e452604
+
+	measure 'Non-Allowed Hours' = ```
+			DIVIDE ( [Non-Allowed Sec], 3600 )
+			```
+		formatString: 0.00
+		displayFolder: Hours
+		lineageTag: 2d414b7e-7f57-56fd-037b-40f49decb3d5
+
+	measure 'Non-Allowed Time' = ```
+			VAR _raw = [Non-Allowed Sec]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		displayFolder: Time (hh:mm:ss)
+		lineageTag: bfe3e5b4-9180-7276-bb22-73855636f982
+
+	measure 'Allowed Status %' = ```
+			DIVIDE ( [Allowed Sec], [Logged In Sec] )
+			```
+		formatString: 0.0%
+		displayFolder: Compliance
+		lineageTag: ea20210c-a3af-ecdd-cc90-14883d672c73
+
+	measure 'Non-Allowed Status %' = ```
+			DIVIDE ( [Non-Allowed Sec], [Logged In Sec] )
+			```
+		formatString: 0.0%
+		displayFolder: Compliance
+		lineageTag: c9b09d36-7fed-307a-29d0-2bed811c2267
+
+	measure 'Allowed Status Target %' = ```
+			0.90
+			```
+		formatString: 0%
+		displayFolder: Targets
+		lineageTag: f9b8514f-925d-40ce-c7c0-829c8ecb14a3
+
+	measure 'Agents Logged In' = ```
+			CALCULATE ( DISTINCTCOUNT ( agent_status_clean[agent_id] ), KEEPFILTERS ( agent_status_clean[agent_logged_in] = TRUE () ) )
+			```
+		formatString: #,0
+		lineageTag: efe6122c-4169-6d6b-4e58-b81eeb8e78f6
+
+	measure 'Agents With Skill' = ```
+			DISTINCTCOUNT ( agent_status_clean[agent_id] )
+			```
+		formatString: #,0
+		lineageTag: 27713f91-a88c-b012-6b63-63b702550375
+
+	measure 'Not Responding CF Color' = ```
+			IF ( [Not Responding Sec] > 0, "#F4C7C3" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: 7598cca7-22aa-da9e-26f8-025eafc6de0a
+
+	measure 'Away CF Color' = ```
+			IF ( [Away Sec] > 0, "#F4C7C3" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: 683231cc-03c9-37dd-24ca-6d68940dfcfe
+
+	measure 'Meal CF Color' = ```
+			IF ( [Meal Sec] > 0, "#F4C7C3" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: b2ed1f79-87c7-1847-a802-23c4862d9ff6
+
+	measure 'Busy CF Color' = ```
+			IF ( [Busy Sec] > 0, "#F4C7C3" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: 4c6863a8-f0aa-d9be-60a1-94b928b2c389
+
+	measure 'Other Off-Queue CF Color' = ```
+			IF ( [Other Off-Queue Sec] > 0, "#F4C7C3" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: b2276ec3-b976-1d79-ac65-c79c185418a2
+
+	measure 'Non-Allowed CF Color' = ```
+			IF ( [Non-Allowed Sec] > 0, "#E06666" )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: a592bfe0-02b3-b858-b234-3b6e97455e4d
+
+	measure 'Allowed Status % Color' = ```
+			IF ( ISBLANK ( [Allowed Status %] ), BLANK (), IF ( [Allowed Status %] >= [Allowed Status Target %], "#107C10", "#C00000" ) )
+			```
+		isHidden
+		displayFolder: Formatting
+		lineageTag: 33a49315-645b-dfe5-4be7-eb9561112614
+
+	column report_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 21c89b88-fca1-3cd3-e9ce-d0eb6e8b335d
+		summarizeBy: none
+		sourceColumn: report_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation SummarizationSetBy = User
+
+	column report_month
+		dataType: string
+		lineageTag: feb6627c-cfa3-1561-66db-0755f7b67642
+		summarizeBy: none
+		sourceColumn: report_month
+
+		annotation SummarizationSetBy = User
+
+	column weekday
+		dataType: string
+		lineageTag: cf0cc5a5-ca89-6297-8478-a5c682ff5bc8
+		summarizeBy: none
+		sourceColumn: weekday
+
+		annotation SummarizationSetBy = User
+
+	column agent_id
+		dataType: string
+		isHidden
+		lineageTag: 216e87a2-2b18-99e2-b664-65a8392beac3
+		summarizeBy: none
+		sourceColumn: agent_id
+
+		annotation SummarizationSetBy = User
+
+	column agent_name
+		dataType: string
+		lineageTag: b485617d-64ec-2a1f-5e0c-a77b02a9afb5
+		summarizeBy: none
+		sourceColumn: agent_name
+
+		annotation SummarizationSetBy = User
+
+	column agent_logged_in
+		dataType: boolean
+		lineageTag: e7768d94-eac5-1dc5-1ec1-3a1b46cce337
+		summarizeBy: none
+		sourceColumn: agent_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column interval_complete
+		dataType: boolean
+		lineageTag: 1a9002db-2da6-b265-4db8-340e4a98611d
+		summarizeBy: none
+		sourceColumn: interval_complete
+
+		annotation SummarizationSetBy = User
+
+	column interval_start
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: a8bbf85b-95ad-a3dc-ec12-923ddb0b3cf9
+		summarizeBy: none
+		sourceColumn: interval_start
+
+		annotation SummarizationSetBy = User
+
+	column interval_end
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: c8be6845-61d7-92c1-0c58-3c302f7c61c0
+		summarizeBy: none
+		sourceColumn: interval_end
+
+		annotation SummarizationSetBy = User
+
+	column interval_minutes
+		dataType: double
+		formatString: 0.00
+		lineageTag: f2116ffe-8d31-6cf2-4d81-bd2d519f6f16
+		summarizeBy: none
+		sourceColumn: interval_minutes
+
+		annotation SummarizationSetBy = User
+
+	column intervals_in_day
+		dataType: int64
+		formatString: 0
+		lineageTag: 31d0c996-d642-d6cc-b563-ff6beeffe775
+		summarizeBy: none
+		sourceColumn: intervals_in_day
+
+		annotation SummarizationSetBy = User
+
+	column logged_in_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: b1752abe-07e2-1ccc-27ed-f4bd0afa5572
+		summarizeBy: none
+		sourceColumn: logged_in_seconds
+
+		annotation SummarizationSetBy = User
+
+	column logged_in_hhmmss
+		dataType: string
+		lineageTag: 6821f87c-c763-5790-2dac-57ac876e1e28
+		summarizeBy: none
+		sourceColumn: logged_in_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column on_queue_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 90c54844-d627-d8de-a1c7-b4c9734f8e1d
+		summarizeBy: none
+		sourceColumn: on_queue_seconds
+
+		annotation SummarizationSetBy = User
+
+	column on_queue_hhmmss
+		dataType: string
+		lineageTag: 631a120c-7b48-2995-9a6b-5c93f7d75659
+		summarizeBy: none
+		sourceColumn: on_queue_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column on_queue_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: e217451a-81b8-e3ae-1233-2d98ca510073
+		summarizeBy: none
+		sourceColumn: on_queue_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column off_queue_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: d1ec0ff7-7b8f-5f63-3f0f-c0f179502d20
+		summarizeBy: none
+		sourceColumn: off_queue_seconds
+
+		annotation SummarizationSetBy = User
+
+	column off_queue_hhmmss
+		dataType: string
+		lineageTag: ed8e598b-36de-cdc6-5764-202ac81a401e
+		summarizeBy: none
+		sourceColumn: off_queue_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column off_queue_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 209eb7e4-0b90-e34f-3406-1fd5a5a77553
+		summarizeBy: none
+		sourceColumn: off_queue_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column idle_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: b8f55dfe-d0d4-4f40-e1be-b7923271b401
+		summarizeBy: none
+		sourceColumn: idle_seconds
+
+		annotation SummarizationSetBy = User
+
+	column idle_hhmmss
+		dataType: string
+		lineageTag: e0cbbde0-2d43-3821-f8b4-1af30aa85466
+		summarizeBy: none
+		sourceColumn: idle_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column idle_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 6970fd58-9d24-23c5-bc03-7fb914630fff
+		summarizeBy: none
+		sourceColumn: idle_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column not_responding_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 50cf0f13-eb25-8d0b-0c7a-97b51b375d9c
+		summarizeBy: none
+		sourceColumn: not_responding_seconds
+
+		annotation SummarizationSetBy = User
+
+	column not_responding_hhmmss
+		dataType: string
+		lineageTag: b1566b5d-ef11-87ad-1707-bdf1c3c24fe2
+		summarizeBy: none
+		sourceColumn: not_responding_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column not_responding_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: fba59232-1736-3d43-6b0c-851bfa4d8e9c
+		summarizeBy: none
+		sourceColumn: not_responding_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column available_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: eccffdff-1b9c-a76d-fab2-749488ea51cc
+		summarizeBy: none
+		sourceColumn: available_seconds
+
+		annotation SummarizationSetBy = User
+
+	column available_hhmmss
+		dataType: string
+		lineageTag: 72779bfe-c303-0bdb-c7f1-aafb2e4b807e
+		summarizeBy: none
+		sourceColumn: available_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column available_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 05f2bb02-d7bd-9444-4266-bf69bb0ed288
+		summarizeBy: none
+		sourceColumn: available_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column away_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: a9577f6a-7fd5-e7cf-bded-45cde831e96c
+		summarizeBy: none
+		sourceColumn: away_seconds
+
+		annotation SummarizationSetBy = User
+
+	column away_hhmmss
+		dataType: string
+		lineageTag: dca00bbe-952a-47ea-b47c-98ca248b70ad
+		summarizeBy: none
+		sourceColumn: away_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column away_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 2b9cb1b9-62dc-b551-7a7a-04a752119b42
+		summarizeBy: none
+		sourceColumn: away_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column break_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: d84fe9dd-c219-6e78-c160-cd56b9a3170d
+		summarizeBy: none
+		sourceColumn: break_seconds
+
+		annotation SummarizationSetBy = User
+
+	column break_hhmmss
+		dataType: string
+		lineageTag: a041239b-b3c6-dc22-6849-b93b3fdd8805
+		summarizeBy: none
+		sourceColumn: break_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column break_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 406fed6e-1bee-5b25-5088-77584f4530f3
+		summarizeBy: none
+		sourceColumn: break_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column meal_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 1f4da2e3-eb89-93b1-1029-e699a391b0c4
+		summarizeBy: none
+		sourceColumn: meal_seconds
+
+		annotation SummarizationSetBy = User
+
+	column meal_hhmmss
+		dataType: string
+		lineageTag: 7cb26723-edef-0421-725c-399a8aa5c52e
+		summarizeBy: none
+		sourceColumn: meal_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column meal_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: d80389fc-f20c-01f8-f944-b334ce1047ba
+		summarizeBy: none
+		sourceColumn: meal_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column busy_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 8c0351d6-c97b-42e8-8087-5b8de8a0ca1c
+		summarizeBy: none
+		sourceColumn: busy_seconds
+
+		annotation SummarizationSetBy = User
+
+	column busy_hhmmss
+		dataType: string
+		lineageTag: d9b08547-efd2-ae27-d52d-1daae12f2c84
+		summarizeBy: none
+		sourceColumn: busy_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column busy_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 525782af-8ba8-ec82-257a-cd01f86c93f9
+		summarizeBy: none
+		sourceColumn: busy_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column meeting_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 49dd609f-ea0e-6eb6-b67d-9943c6673b8d
+		summarizeBy: none
+		sourceColumn: meeting_seconds
+
+		annotation SummarizationSetBy = User
+
+	column meeting_hhmmss
+		dataType: string
+		lineageTag: 3548c515-c544-34c5-5820-3414269292d5
+		summarizeBy: none
+		sourceColumn: meeting_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column meeting_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 4e06866f-0ac0-685e-85ed-dc3174ced233
+		summarizeBy: none
+		sourceColumn: meeting_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column training_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 0986069b-62b0-d856-cfc5-fc018da5cbdf
+		summarizeBy: none
+		sourceColumn: training_seconds
+
+		annotation SummarizationSetBy = User
+
+	column training_hhmmss
+		dataType: string
+		lineageTag: da057209-f68e-7122-be79-5d98730d6e40
+		summarizeBy: none
+		sourceColumn: training_hhmmss
+
+		annotation SummarizationSetBy = User
+
+	column training_pct_of_logged_in
+		dataType: double
+		formatString: 0.00
+		lineageTag: 8876794e-89d2-7c98-7750-fcc6b96da590
+		summarizeBy: none
+		sourceColumn: training_pct_of_logged_in
+
+		annotation SummarizationSetBy = User
+
+	column skills
+		dataType: string
+		lineageTag: 4a109b1f-d285-10f7-f753-11d4d2f1b70f
+		summarizeBy: none
+		sourceColumn: skills
+
+		annotation SummarizationSetBy = User
+
+	column filters
+		dataType: string
+		isHidden
+		lineageTag: 4c2f0df5-d864-643f-620d-607acf27668c
+		summarizeBy: none
+		sourceColumn: filters
+
+		annotation SummarizationSetBy = User
+
+	column dq_flags
+		dataType: string
+		lineageTag: 72680b03-3eb2-a3e7-7456-a849e9ad81e4
+		summarizeBy: none
+		sourceColumn: dq_flags
+
+		annotation SummarizationSetBy = User
+
+	column source_file
+		dataType: string
+		isHidden
+		lineageTag: 8a9d15e7-c8ca-7594-7d34-05d030842308
+		summarizeBy: none
+		sourceColumn: source_file
+
+		annotation SummarizationSetBy = User
+
+	column source_row
+		dataType: string
+		isHidden
+		lineageTag: 9c5fb15a-5366-5e98-6881-79913a98171b
+		summarizeBy: none
+		sourceColumn: source_row
+
+		annotation SummarizationSetBy = User
+
+	column load_timestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: 43f82b4c-7461-d0ec-6701-a6038e1a987f
+		summarizeBy: none
+		sourceColumn: load_timestamp
+
+		annotation SummarizationSetBy = User
+
+	partition agent_status_clean = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(ExcelFilePath), null, true),
+				    Sheet = Source{[Item = "agent_status_clean", Kind = "Sheet"]}[Data],
+				    Promoted = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    Selected = Table.SelectColumns(Promoted, {"report_date", "report_month", "weekday", "agent_id", "agent_name", "agent_logged_in", "interval_complete", "interval_start", "interval_end", "interval_minutes", "intervals_in_day", "logged_in_seconds", "logged_in_hhmmss", "on_queue_seconds", "on_queue_hhmmss", "on_queue_pct_of_logged_in", "off_queue_seconds", "off_queue_hhmmss", "off_queue_pct_of_logged_in", "idle_seconds", "idle_hhmmss", "idle_pct_of_logged_in", "not_responding_seconds", "not_responding_hhmmss", "not_responding_pct_of_logged_in", "available_seconds", "available_hhmmss", "available_pct_of_logged_in", "away_seconds", "away_hhmmss", "away_pct_of_logged_in", "break_seconds", "break_hhmmss", "break_pct_of_logged_in", "meal_seconds", "meal_hhmmss", "meal_pct_of_logged_in", "busy_seconds", "busy_hhmmss", "busy_pct_of_logged_in", "meeting_seconds", "meeting_hhmmss", "meeting_pct_of_logged_in", "training_seconds", "training_hhmmss", "training_pct_of_logged_in", "skills", "filters", "dq_flags", "source_file", "source_row", "load_timestamp"}, MissingField.UseNull),
+				    Typed = Table.TransformColumnTypes(
+				        Selected,
+				        {
+				        {"report_date", type date},
+				        {"report_month", type text},
+				        {"weekday", type text},
+				        {"agent_id", type text},
+				        {"agent_name", type text},
+				        {"agent_logged_in", type logical},
+				        {"interval_complete", type logical},
+				        {"interval_start", type datetime},
+				        {"interval_end", type datetime},
+				        {"interval_minutes", type number},
+				        {"intervals_in_day", Int64.Type},
+				        {"logged_in_seconds", type number},
+				        {"logged_in_hhmmss", type text},
+				        {"on_queue_seconds", type number},
+				        {"on_queue_hhmmss", type text},
+				        {"on_queue_pct_of_logged_in", type number},
+				        {"off_queue_seconds", type number},
+				        {"off_queue_hhmmss", type text},
+				        {"off_queue_pct_of_logged_in", type number},
+				        {"idle_seconds", type number},
+				        {"idle_hhmmss", type text},
+				        {"idle_pct_of_logged_in", type number},
+				        {"not_responding_seconds", type number},
+				        {"not_responding_hhmmss", type text},
+				        {"not_responding_pct_of_logged_in", type number},
+				        {"available_seconds", type number},
+				        {"available_hhmmss", type text},
+				        {"available_pct_of_logged_in", type number},
+				        {"away_seconds", type number},
+				        {"away_hhmmss", type text},
+				        {"away_pct_of_logged_in", type number},
+				        {"break_seconds", type number},
+				        {"break_hhmmss", type text},
+				        {"break_pct_of_logged_in", type number},
+				        {"meal_seconds", type number},
+				        {"meal_hhmmss", type text},
+				        {"meal_pct_of_logged_in", type number},
+				        {"busy_seconds", type number},
+				        {"busy_hhmmss", type text},
+				        {"busy_pct_of_logged_in", type number},
+				        {"meeting_seconds", type number},
+				        {"meeting_hhmmss", type text},
+				        {"meeting_pct_of_logged_in", type number},
+				        {"training_seconds", type number},
+				        {"training_hhmmss", type text},
+				        {"training_pct_of_logged_in", type number},
+				        {"skills", type text},
+				        {"filters", type text},
+				        {"dq_flags", type text},
+				        {"source_file", type text},
+				        {"source_row", type text},
+				        {"load_timestamp", type datetime}
+				        }
+				    )
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table

@@ -1,0 +1,53 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "4ac1e5d8387187533380",
+  "position": {
+    "x": 1092.5714285714284,
+    "y": 74,
+    "z": 9000,
+    "height": 92,
+    "width": 171.42857142857142,
+    "tabOrder": 9000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "agent_performance_clean"
+                    }
+                  },
+                  "Property": "AHT"
+                }
+              },
+              "queryRef": "agent_performance_clean.AHT",
+              "displayName": "Avg Handle Time"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {
+      "labels": [
+        {
+          "properties": {
+            "fontSize": {
+              "expr": {
+                "Literal": {
+                  "Value": "20D"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

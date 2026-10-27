@@ -1,0 +1,24 @@
+relationship a9482691-1ce1-9535-fb6d-56865b5895dc
+	fromColumn: service_level_metrics_clean.report_date
+	toColumn: Calendar.Date
+
+relationship f2764888-c89d-76c5-a721-10b42f3783bb
+	fromColumn: abandoned_calls_clean.report_date
+	toColumn: Calendar.Date
+
+relationship 7b8ca1b6-6632-bf20-9f70-5780d1fa5c58
+	fromColumn: agent_status_clean.report_date
+	toColumn: Calendar.Date
+
+relationship d9a70e10-cb56-3b6e-43a1-c0ccaf6f81d7
+	fromColumn: agent_performance_clean.report_date
+	toColumn: Calendar.Date
+
+relationship 0710fab0-8ed2-c86f-11f8-44ed0dc91ada
+	fromColumn: agent_status_clean.agent_id
+	toColumn: Agents.agent_id
+
+relationship 039bac11-6bbd-e565-56f2-3f5842713677
+	fromColumn: agent_performance_clean.agent_id
+	toColumn: Agents.agent_id
+

@@ -1,0 +1,104 @@
+table Calendar
+	lineageTag: 8ff922bb-cd8a-d41c-dfc4-8d3c5163b2ab
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 0a203f8b-7baf-0b66-619c-4005b59c380d
+		summarizeBy: none
+		sourceColumn: Date
+		isKey
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation SummarizationSetBy = User
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: abfe6582-725e-7c23-8e2f-6cae2423906a
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = User
+
+	column 'Month Sort'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 97e07d91-a3e6-95eb-e7c5-a5950204c4e0
+		summarizeBy: none
+		sourceColumn: Month Sort
+
+		annotation SummarizationSetBy = User
+
+	column Month
+		dataType: string
+		lineageTag: 30525bd8-a80b-6e9a-e272-35b889d6b914
+		summarizeBy: none
+		sourceColumn: Month
+		sortByColumn: 'Month Sort'
+
+		annotation SummarizationSetBy = User
+
+	column Day
+		dataType: int64
+		formatString: 0
+		lineageTag: f5b00bb9-2745-1e1c-f7f4-9bb4d03904a4
+		summarizeBy: none
+		sourceColumn: Day
+
+		annotation SummarizationSetBy = User
+
+	column 'Weekday No'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 807c2f08-deba-f1f7-077b-290bfbaf22ce
+		summarizeBy: none
+		sourceColumn: Weekday No
+
+		annotation SummarizationSetBy = User
+
+	column Weekday
+		dataType: string
+		lineageTag: 474a51df-04a7-0310-99eb-0b65979609fd
+		summarizeBy: none
+		sourceColumn: Weekday
+		sortByColumn: 'Weekday No'
+
+		annotation SummarizationSetBy = User
+
+	partition Calendar = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(ExcelFilePath), null, true),
+				    SheetDates = (sheet as text) as list =>
+				        let
+				            Found = Table.SelectRows(Source, each [Item] = sheet and [Kind] = "Sheet"),
+				            Data = if Table.IsEmpty(Found) then #table({"report_date"}, {})
+				                   else Table.PromoteHeaders(Found{0}[Data], [PromoteAllScalars = true]),
+				            Values = if Table.HasColumns(Data, "report_date") then Table.Column(Data, "report_date") else {}
+				        in
+				            List.RemoveNulls(List.Transform(Values, each try Date.From(_) otherwise null)),
+				    AllDates = List.Combine({
+				        SheetDates("service_level_metrics_clean"), SheetDates("abandoned_calls_clean"),
+				        SheetDates("agent_status_clean"), SheetDates("agent_performance_clean")}),
+				    Today = Date.From(DateTime.LocalNow()),
+				    StartDate = Date.StartOfMonth(if List.IsEmpty(AllDates) then Today else List.Min(AllDates)),
+				    EndDate = Date.EndOfMonth(if List.IsEmpty(AllDates) then Today else List.Max(AllDates)),
+				    Dates = List.Dates(StartDate, Duration.Days(EndDate - StartDate) + 1, #duration(1, 0, 0, 0)),
+				    Base = Table.FromList(Dates, Splitter.SplitByNothing(), {"Date"}),
+				    Typed = Table.TransformColumnTypes(Base, {{"Date", type date}}),
+				    AddYear = Table.AddColumn(Typed, "Year", each Date.Year([Date]), Int64.Type),
+				    AddMonthNo = Table.AddColumn(AddYear, "Month Sort", each Date.Year([Date]) * 100 + Date.Month([Date]), Int64.Type),
+				    AddMonth = Table.AddColumn(AddMonthNo, "Month", each Date.ToText([Date], "MMM yyyy", "en-US"), type text),
+				    AddDay = Table.AddColumn(AddMonth, "Day", each Date.Day([Date]), Int64.Type),
+				    AddWeekdayNo = Table.AddColumn(AddDay, "Weekday No", each Date.DayOfWeek([Date], Day.Monday) + 1, Int64.Type),
+				    AddWeekday = Table.AddColumn(AddWeekdayNo, "Weekday", each Date.ToText([Date], "ddd", "en-US"), type text)
+				in
+				    AddWeekday
+
+	annotation PBI_ResultType = Table

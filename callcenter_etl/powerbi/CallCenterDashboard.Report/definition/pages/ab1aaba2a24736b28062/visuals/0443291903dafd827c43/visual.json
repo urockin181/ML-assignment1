@@ -1,0 +1,119 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+  "name": "0443291903dafd827c43",
+  "position": {
+    "x": 786,
+    "y": 496,
+    "z": 13000,
+    "height": 390,
+    "width": 478,
+    "tabOrder": 13000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "abandoned_calls_clean"
+                    }
+                  },
+                  "Property": "call_datetime"
+                }
+              },
+              "queryRef": "abandoned_calls_clean.call_datetime",
+              "displayName": "Call time"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "abandoned_calls_clean"
+                    }
+                  },
+                  "Property": "Time to Abandon"
+                }
+              },
+              "queryRef": "abandoned_calls_clean.Time to Abandon",
+              "displayName": "Waited before abandoning"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "abandoned_calls_clean"
+                    }
+                  },
+                  "Property": "users"
+                }
+              },
+              "queryRef": "abandoned_calls_clean.users",
+              "displayName": "Agent(s) alerted"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "abandoned_calls_clean"
+                    }
+                  },
+                  "Property": "conversation_id"
+                }
+              },
+              "queryRef": "abandoned_calls_clean.conversation_id",
+              "displayName": "Conversation ID"
+            }
+          ]
+        }
+      },
+      "sortDefinition": {
+        "sort": [
+          {
+            "field": {
+              "Column": {
+                "Expression": {
+                  "SourceRef": {
+                    "Entity": "abandoned_calls_clean"
+                  }
+                },
+                "Property": "call_datetime"
+              }
+            },
+            "direction": "Ascending"
+          }
+        ]
+      }
+    },
+    "visualContainerObjects": {
+      "title": [
+        {
+          "properties": {
+            "show": {
+              "expr": {
+                "Literal": {
+                  "Value": "true"
+                }
+              }
+            },
+            "text": {
+              "expr": {
+                "Literal": {
+                  "Value": "'Abandoned calls'"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "drillFilterOtherVisuals": true
+  }
+}

@@ -1,0 +1,347 @@
+table abandoned_calls_clean
+	lineageTag: 2e41ee4f-f0ab-75fd-3833-90a641c90a07
+
+	measure 'Call Records' = ```
+			COUNTROWS ( abandoned_calls_clean )
+			```
+		formatString: #,0
+		lineageTag: 765f566f-abb7-8e52-c2d7-e28865ddfb3e
+
+	measure 'Abandoned Calls (Detail)' = ```
+			SUM ( abandoned_calls_clean[abandoned_flag] )
+			```
+		formatString: #,0
+		lineageTag: 930f2191-7547-6fe2-6830-5315a23bddaa
+
+	measure 'Abandon % (Detail)' = ```
+			DIVIDE ( [Abandoned Calls (Detail)], [Call Records] )
+			```
+		formatString: 0.0%
+		lineageTag: a9366e6b-64a6-c056-b04d-acfda116f6f9
+
+	measure 'Avg Time to Abandon (sec)' = ```
+			CALCULATE ( AVERAGE ( abandoned_calls_clean[time_to_abandon_seconds] ), KEEPFILTERS ( abandoned_calls_clean[is_abandoned] = TRUE () ) )
+			```
+		formatString: 0
+		lineageTag: 852d9feb-e355-6dd9-e721-044ec5add3bc
+
+	measure 'Avg Time to Abandon' = ```
+			VAR _raw = [Avg Time to Abandon (sec)]
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		lineageTag: f48b8873-b84a-0ca9-0fb9-6fcb8a096260
+
+	measure 'Time to Abandon' = ```
+			VAR _raw = CALCULATE ( SUM ( abandoned_calls_clean[time_to_abandon_seconds] ), KEEPFILTERS ( abandoned_calls_clean[is_abandoned] = TRUE () ) )
+			VAR _s = ROUND ( _raw, 0 )
+			RETURN
+			    IF (
+			        ISBLANK ( _raw ),
+			        BLANK (),
+			        FORMAT ( INT ( _s / 3600 ), "00" ) & ":"
+			            & FORMAT ( INT ( MOD ( _s, 3600 ) / 60 ), "00" ) & ":"
+			            & FORMAT ( MOD ( _s, 60 ), "00" )
+			    )
+			```
+		lineageTag: 5fb0f7d2-9631-6836-ec62-34a0358ddbf4
+
+	column conversation_id
+		dataType: string
+		lineageTag: 63f6eed8-6de9-a92c-7ef0-ff4188023972
+		summarizeBy: none
+		sourceColumn: conversation_id
+
+		annotation SummarizationSetBy = User
+
+	column call_datetime
+		dataType: dateTime
+		formatString: General Date
+		lineageTag: 0909176c-0e95-3a07-30ae-ab1dd5014f7d
+		summarizeBy: none
+		sourceColumn: call_datetime
+
+		annotation SummarizationSetBy = User
+
+	column report_date
+		dataType: dateTime
+		formatString: yyyy-mm-dd
+		lineageTag: 8bac71a9-1d2b-24e8-85d1-5303ee878871
+		summarizeBy: none
+		sourceColumn: report_date
+
+		annotation UnderlyingDateTimeDataType = Date
+
+		annotation SummarizationSetBy = User
+
+	column report_month
+		dataType: string
+		lineageTag: ebecd320-2f4f-25b0-95ef-e4af4e048ca1
+		summarizeBy: none
+		sourceColumn: report_month
+
+		annotation SummarizationSetBy = User
+
+	column weekday
+		dataType: string
+		lineageTag: 8804961b-b3b1-549e-ac47-829690ee76d5
+		summarizeBy: none
+		sourceColumn: weekday
+
+		annotation SummarizationSetBy = User
+
+	column call_hour
+		dataType: int64
+		formatString: 0
+		lineageTag: 3bd3aab7-ea7d-87a8-8ab0-2a99afc035c2
+		summarizeBy: none
+		sourceColumn: call_hour
+
+		annotation SummarizationSetBy = User
+
+	column half_hour_slot
+		dataType: string
+		lineageTag: 19b0c960-9c48-9b5e-4f7e-92b444375541
+		summarizeBy: none
+		sourceColumn: half_hour_slot
+
+		annotation SummarizationSetBy = User
+
+	column is_abandoned
+		dataType: boolean
+		lineageTag: 2d547e24-cd84-9e8f-3c5b-7bae3722db98
+		summarizeBy: none
+		sourceColumn: is_abandoned
+
+		annotation SummarizationSetBy = User
+
+	column abandoned_flag
+		dataType: int64
+		formatString: 0
+		lineageTag: 89983bbe-4726-98fe-0c35-b18220b6df18
+		summarizeBy: none
+		sourceColumn: abandoned_flag
+
+		annotation SummarizationSetBy = User
+
+	column abandoned_raw
+		dataType: string
+		lineageTag: 18d1a46f-152c-14d0-ae4d-88ebd8e98e8f
+		summarizeBy: none
+		sourceColumn: abandoned_raw
+
+		annotation SummarizationSetBy = User
+
+	column call_status
+		dataType: string
+		lineageTag: e39eb6a1-4751-aa87-6f0a-0d7b73ece733
+		summarizeBy: none
+		sourceColumn: call_status
+
+		annotation SummarizationSetBy = User
+
+	column time_to_abandon_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: 5e72d041-7fc3-a096-4223-5a30e50a6847
+		summarizeBy: none
+		sourceColumn: time_to_abandon_seconds
+
+		annotation SummarizationSetBy = User
+
+	column time_to_abandon_raw
+		dataType: string
+		lineageTag: afbcff59-3387-da5b-a7e0-8fdc017b464b
+		summarizeBy: none
+		sourceColumn: time_to_abandon_raw
+
+		annotation SummarizationSetBy = User
+
+	column duration_seconds
+		dataType: double
+		formatString: 0.00
+		lineageTag: e8ce9d6e-8885-e653-d9b0-135991d22a83
+		summarizeBy: none
+		sourceColumn: duration_seconds
+
+		annotation SummarizationSetBy = User
+
+	column queue
+		dataType: string
+		lineageTag: 3c57e02e-103b-5310-41ba-521e85f41601
+		summarizeBy: none
+		sourceColumn: queue
+
+		annotation SummarizationSetBy = User
+
+	column direction
+		dataType: string
+		lineageTag: cc7d9960-24f9-b0b5-36ee-1fa3c1b918dc
+		summarizeBy: none
+		sourceColumn: direction
+
+		annotation SummarizationSetBy = User
+
+	column media_type
+		dataType: string
+		lineageTag: a8c18c49-3a41-5731-332e-0e93e62866b7
+		summarizeBy: none
+		sourceColumn: media_type
+
+		annotation SummarizationSetBy = User
+
+	column users
+		dataType: string
+		lineageTag: a9ea1b91-0a74-14b5-6dad-f977312d16c0
+		summarizeBy: none
+		sourceColumn: users
+
+		annotation SummarizationSetBy = User
+
+	column user_count
+		dataType: int64
+		formatString: 0
+		lineageTag: 94ee3640-d81c-18d5-e060-220f13897fe5
+		summarizeBy: none
+		sourceColumn: user_count
+
+		annotation SummarizationSetBy = User
+
+	column first_user
+		dataType: string
+		lineageTag: 1a91ea39-ec5e-89d0-956b-eb436b2004ea
+		summarizeBy: none
+		sourceColumn: first_user
+
+		annotation SummarizationSetBy = User
+
+	column remote
+		dataType: string
+		lineageTag: 21ac4ada-c564-27d0-d19e-2f54d36cd2c5
+		summarizeBy: none
+		sourceColumn: remote
+
+		annotation SummarizationSetBy = User
+
+	column wrap_up
+		dataType: string
+		lineageTag: 5db1c481-1be7-a9ee-8f00-bd896739deaf
+		summarizeBy: none
+		sourceColumn: wrap_up
+
+		annotation SummarizationSetBy = User
+
+	column full_export_completed
+		dataType: boolean
+		lineageTag: 2b00f436-6b40-6ae8-6139-7b850d7022a4
+		summarizeBy: none
+		sourceColumn: full_export_completed
+
+		annotation SummarizationSetBy = User
+
+	column partial_result_timestamp
+		dataType: string
+		lineageTag: 75112795-7708-1a96-a3d7-689f6188f204
+		summarizeBy: none
+		sourceColumn: partial_result_timestamp
+
+		annotation SummarizationSetBy = User
+
+	column filters
+		dataType: string
+		isHidden
+		lineageTag: 8a468e82-0299-6801-bc36-b8a4d4078f4b
+		summarizeBy: none
+		sourceColumn: filters
+
+		annotation SummarizationSetBy = User
+
+	column dq_flags
+		dataType: string
+		lineageTag: 4f13b1b1-1fc7-5db3-c68a-4e1dde41044d
+		summarizeBy: none
+		sourceColumn: dq_flags
+
+		annotation SummarizationSetBy = User
+
+	column source_file
+		dataType: string
+		isHidden
+		lineageTag: 24d767bc-0a8d-b070-a92b-c42b44e158d2
+		summarizeBy: none
+		sourceColumn: source_file
+
+		annotation SummarizationSetBy = User
+
+	column source_row
+		dataType: string
+		isHidden
+		lineageTag: 4a8c3236-d129-3f61-5c8f-00e79252b918
+		summarizeBy: none
+		sourceColumn: source_row
+
+		annotation SummarizationSetBy = User
+
+	column load_timestamp
+		dataType: dateTime
+		isHidden
+		formatString: General Date
+		lineageTag: d6f4bf8a-a96a-c1f7-74a0-2e08dec222dd
+		summarizeBy: none
+		sourceColumn: load_timestamp
+
+		annotation SummarizationSetBy = User
+
+	partition abandoned_calls_clean = m
+		mode: import
+		source =
+				let
+				    Source = Excel.Workbook(File.Contents(ExcelFilePath), null, true),
+				    Sheet = Source{[Item = "abandoned_calls_clean", Kind = "Sheet"]}[Data],
+				    Promoted = Table.PromoteHeaders(Sheet, [PromoteAllScalars = true]),
+				    Selected = Table.SelectColumns(Promoted, {"conversation_id", "call_datetime", "report_date", "report_month", "weekday", "call_hour", "half_hour_slot", "is_abandoned", "abandoned_flag", "abandoned_raw", "call_status", "time_to_abandon_seconds", "time_to_abandon_raw", "duration_seconds", "queue", "direction", "media_type", "users", "user_count", "first_user", "remote", "wrap_up", "full_export_completed", "partial_result_timestamp", "filters", "dq_flags", "source_file", "source_row", "load_timestamp"}, MissingField.UseNull),
+				    Typed = Table.TransformColumnTypes(
+				        Selected,
+				        {
+				        {"conversation_id", type text},
+				        {"call_datetime", type datetime},
+				        {"report_date", type date},
+				        {"report_month", type text},
+				        {"weekday", type text},
+				        {"call_hour", Int64.Type},
+				        {"half_hour_slot", type text},
+				        {"is_abandoned", type logical},
+				        {"abandoned_flag", Int64.Type},
+				        {"abandoned_raw", type text},
+				        {"call_status", type text},
+				        {"time_to_abandon_seconds", type number},
+				        {"time_to_abandon_raw", type text},
+				        {"duration_seconds", type number},
+				        {"queue", type text},
+				        {"direction", type text},
+				        {"media_type", type text},
+				        {"users", type text},
+				        {"user_count", Int64.Type},
+				        {"first_user", type text},
+				        {"remote", type text},
+				        {"wrap_up", type text},
+				        {"full_export_completed", type logical},
+				        {"partial_result_timestamp", type text},
+				        {"filters", type text},
+				        {"dq_flags", type text},
+				        {"source_file", type text},
+				        {"source_row", type text},
+				        {"load_timestamp", type datetime}
+				        }
+				    )
+				in
+				    Typed
+
+	annotation PBI_ResultType = Table
