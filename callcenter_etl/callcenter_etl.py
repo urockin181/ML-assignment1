@@ -9,6 +9,9 @@ Processes four exports and writes ONE Excel workbook with four sheets:
     agent_status_clean            <- agent status export        (e.g. AgentsSTA-26Oct26.csv)
     agent_performance_clean       <- agent performance export   (e.g. AgentsPer-26Oct26.csv)
 
+Both agent sheets have exactly ONE row per agent per day: daily totals
+(seconds and hh:mm:ss) and correctly weighted daily averages.
+
 History / appending
 -------------------
 If the output workbook already exists, each newly processed dataset is merged
@@ -1034,37 +1037,118 @@ def process_agent_status(path: Path, cfg: Config, dq: QualityReport, load_ts) ->
         dq.check(ds, "A status duration is longer than the interval", too_long, df, severity="ERROR",
                  example_cols=["agent_name", "report_date"])
         flags.append(("status_longer_than_interval", too_long))
-    logged = g("logged_in") if "logged_in" in sec else sec.max(axis=1)
-    df["agent_logged_in"] = logged > 0
-    dq.check(ds, "Agents with the skill but no logged-in time (kept, agent_logged_in = FALSE)",
-             ~df["agent_logged_in"], df, severity="INFO", example_cols=["agent_name"])
     check_duplicates(df, ["interval_start", "interval_end", "agent_id"], ds, dq, flags)
     df["dq_flags"] = build_flags(df, flags)
     df = add_source_columns(df, path, load_ts)
 
-    # --- Unpivot to long format: one row per agent x interval x status ---
-    id_cols = ["report_date", "report_month", "weekday", "interval_start", "interval_end",
-               "interval_minutes", "interval_start_hour", "interval_complete", "agent_id",
-               "agent_name", "skills", "agent_logged_in"] + other_cols + \
-              ["filters", "dq_flags", "source_file", "source_row", "load_timestamp"]
-    wide = pd.concat([df[id_cols], sec], axis=1)
-    long = wide.melt(id_vars=id_cols, value_vars=status_cols,
-                     var_name="status_key", value_name="duration_seconds")
-    long["status"] = long["status_key"].map(lambda k: STATUS_DEFINITIONS.get(k, (k.replace("_", " ").title(),))[0])
-    long["status_group"] = long["status_key"].map(lambda k: STATUS_DEFINITIONS.get(k, (None, UNMAPPED_STATUS_GROUP))[1])
-    long["status_sort"] = long["status_key"].map(lambda k: STATUS_DEFINITIONS.get(k, (None, None, 99))[2]).astype("Int64")
-    long["duration_minutes"] = (long["duration_seconds"] / 60).round(4)
-    long["duration_hours"] = (long["duration_seconds"] / 3600).round(6)
-    long = long.drop(columns=["status_key"])
-    long = long.sort_values(["report_date", "agent_name", "status_sort"], kind="stable").reset_index(drop=True)
+    # --- One row per agent per day; each status becomes a column ---
+    sec.columns = [f"{c}_seconds" for c in sec.columns]
+    df = pd.concat([df.drop(columns=status_cols), sec], axis=1)
+    daily = collapse_to_agent_day(df, list(sec.columns), ds, dq)
+    daily = finalize_agent_status(daily)
+    dq.check(ds, "Agents with the skill but no logged-in time (kept, agent_logged_in = FALSE)",
+             ~daily["agent_logged_in"], daily, severity="INFO", example_cols=["agent_name"])
+    dq.set_summary(ds, output_rows=len(daily), agents=daily["agent_id"].nunique(),
+                   date_from=daily["report_date"].min(), date_to=daily["report_date"].max())
+    return daily
 
-    dq.set_summary(ds, output_rows=len(long), agents=df["agent_id"].nunique(),
-                   date_from=df["report_date"].min(), date_to=df["report_date"].max())
-    return order_columns(long, [
-        "report_date", "report_month", "weekday", "interval_start", "interval_end",
-        "interval_minutes", "interval_start_hour", "interval_complete", "agent_id", "agent_name",
-        "agent_logged_in", "status", "status_group", "status_sort",
-        "duration_seconds", "duration_minutes", "duration_hours", "skills", "filters"])
+
+def status_keys_in(df: pd.DataFrame) -> list[str]:
+    """Status keys present as '<key>_seconds' columns, in display order."""
+    keys = [c[: -len("_seconds")] for c in df.columns if c.endswith("_seconds")]
+    known = [k for k in STATUS_DEFINITIONS if k in keys]
+    return known + sorted(k for k in keys if k not in STATUS_DEFINITIONS)
+
+
+def finalize_agent_status(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    (Re)build the readable columns of the daily status sheet from the
+    '<status>_seconds' columns: hh:mm:ss text, % of logged-in time and the
+    agent_logged_in flag. Safe to run again after a history merge.
+    """
+    df = df.drop(columns=[c for c in ("interval_start_hour",) if c in df.columns])
+    keys = status_keys_in(df)
+    logged = df["logged_in_seconds"] if "logged_in_seconds" in df else df[[f"{k}_seconds" for k in keys]].max(axis=1)
+    df["agent_logged_in"] = (logged.fillna(0) > 0).astype("boolean")
+    status_cols = []
+    for k in keys:
+        sec_col = f"{k}_seconds"
+        df[sec_col] = pd.to_numeric(df[sec_col], errors="coerce").round(3)
+        df[f"{k}_hhmmss"] = seconds_to_hhmmss(df[sec_col])
+        status_cols += [sec_col, f"{k}_hhmmss"]
+        if k != "logged_in" and "logged_in_seconds" in df:
+            df[f"{k}_pct_of_logged_in"] = (df[sec_col] / logged.where(logged > 0)).round(6)
+            status_cols.append(f"{k}_pct_of_logged_in")
+    first = ["report_date", "report_month", "weekday", "agent_id", "agent_name", "agent_logged_in",
+             "interval_complete", "interval_start", "interval_end", "interval_minutes", "intervals_in_day"]
+    first = [c for c in first if c in df.columns]
+    tail_order = ("skills", "filters", "dq_flags", "source_file", "source_row", "load_timestamp")
+    rest = [c for c in df.columns if c not in first and c not in status_cols and c not in tail_order]
+    tail = [c for c in tail_order if c in df.columns]
+    return df[first + status_cols + rest + tail]
+
+
+def seconds_to_hhmmss(s: pd.Series) -> pd.Series:
+    """12345.6 -> '03:25:46' (hours can exceed 24). Blank stays blank."""
+    def f(v):
+        if pd.isna(v):
+            return None
+        h, rem = divmod(int(round(float(v))), 3600)
+        m, sec = divmod(rem, 60)
+        return f"{h:02d}:{m:02d}:{sec:02d}"
+    return s.map(f).astype(object)
+
+
+def _join_unique(s: pd.Series) -> str | None:
+    parts = dict.fromkeys(x.strip() for v in s.dropna().astype(str) for x in v.split(";") if x.strip())
+    return "; ".join(parts) or None
+
+
+def collapse_to_agent_day(df: pd.DataFrame, sum_cols: list[str], dataset: str,
+                          dq: QualityReport) -> pd.DataFrame:
+    """
+    Return exactly one row per report_date + agent_id.
+
+    The daily exports already have one row per agent, so this changes nothing
+    today. If a file has several intervals per day (e.g. hourly), the numeric
+    `sum_cols` are added up. Exact duplicate rows are counted once so time and
+    calls are never double counted.
+    """
+    content = [c for c in df.columns if c not in ("source_row",)]
+    exact = df.duplicated(subset=content, keep="first")
+    if exact.any():
+        dq.add(dataset, "Exact duplicate rows counted once in the daily totals", "WARNING", int(exact.sum()))
+        df = df[~exact]
+    key = ["report_date", "agent_id"]
+    agg: dict = {c: (lambda x: x.sum(min_count=1)) for c in sum_cols}
+    special = {
+        "agent_name": "last", "interval_start": "min", "interval_end": "max",
+        "interval_minutes": "sum", "load_timestamp": "max",
+        "interval_complete": lambda x: bool(x.fillna(False).all()),
+        "skills": _join_unique, "filters": _join_unique, "dq_flags": _join_unique,
+        "source_file": _join_unique,
+        "source_row": lambda x: ", ".join(str(int(v)) for v in x.dropna()),
+    }
+    for c in df.columns:
+        if c in key or c in agg:
+            continue
+        agg[c] = special.get(c, "first")
+    sizes = df.groupby(key, dropna=False).size()
+    multi = int((sizes > 1).sum())
+    if multi:
+        dq.add(dataset, "Several intervals for the same agent and day combined into one daily row",
+               "INFO", multi)
+    else:
+        dq.add(dataset, "One row per agent per day", "OK", 0)
+    out = df.groupby(key, dropna=False, sort=False).agg(agg).reset_index()
+    out["intervals_in_day"] = sizes.reindex(pd.MultiIndex.from_frame(out[key])).to_numpy()
+    out["interval_complete"] = out["interval_complete"].astype("boolean")
+    for c in sum_cols:
+        if str(df[c].dtype) == "Int64":
+            out[c] = out[c].astype("Int64")
+    if "source_row" in out:
+        out["source_row"] = out["source_row"].astype(object)
+    return out
 
 
 # =============================================================================
@@ -1126,14 +1210,44 @@ def process_agent_performance(path: Path, cfg: Config, dq: QualityReport, load_t
 
     df["dq_flags"] = build_flags(df, flags)
     df = add_source_columns(df, path, load_ts)
-    dq.set_summary(ds, output_rows=len(df), agents=df["agent_id"].nunique(),
-                   date_from=df["report_date"].min(), date_to=df["report_date"].max())
-    return order_columns(df, [
-        "report_date", "report_month", "weekday", "interval_start", "interval_end",
-        "interval_minutes", "interval_start_hour", "interval_complete", "agent_id", "agent_name",
-        "has_activity", "answered", "handled", "avg_handle_seconds", "avg_handle_raw",
-        "total_handle_seconds", "avg_talk_seconds", "avg_hold_seconds", "avg_acw_seconds",
-        "held", "transferred", "media_type", "skills", "filters"])
+
+    # --- One row per agent per day ---
+    # Weighted helpers so averages stay correct if several intervals are
+    # combined: talk and ACW weighted by handled calls, hold by held calls.
+    h = df["handled"].astype("float64")
+    df["_w_talk"] = df["avg_talk_seconds"] * h
+    df["_w_acw"] = df["avg_acw_seconds"] * h
+    df["_w_hold"] = df["avg_hold_seconds"] * df["held"].astype("float64")
+    sums = ["answered", "handled", "held", "transferred", "total_handle_seconds",
+            "_w_talk", "_w_acw", "_w_hold"]
+    daily = collapse_to_agent_day(df, sums, ds, dq)
+    multi = daily["intervals_in_day"] > 1
+    hd = daily["handled"].astype("float64")
+    hl = daily["held"].astype("float64")
+    daily["avg_handle_seconds"] = (daily["total_handle_seconds"] / hd.where(hd > 0)).round(3)
+    daily["avg_talk_seconds"] = daily["avg_talk_seconds"].where(~multi, daily["_w_talk"] / hd.where(hd > 0)).round(3)
+    daily["avg_acw_seconds"] = daily["avg_acw_seconds"].where(~multi, daily["_w_acw"] / hd.where(hd > 0)).round(3)
+    daily["avg_hold_seconds"] = daily["avg_hold_seconds"].where(~multi, daily["_w_hold"] / hl.where(hl > 0)).round(3)
+    daily["avg_handle_raw"] = daily["avg_handle_raw"].where(~multi, None)
+    daily = daily.drop(columns=["_w_talk", "_w_acw", "_w_hold"])
+    daily = finalize_agent_performance(daily)
+    dq.set_summary(ds, output_rows=len(daily), agents=daily["agent_id"].nunique(),
+                   date_from=daily["report_date"].min(), date_to=daily["report_date"].max())
+    return daily
+
+
+def finalize_agent_performance(df: pd.DataFrame) -> pd.DataFrame:
+    """Readable columns and column order for the daily performance sheet."""
+    df["has_activity"] = ((df["answered"].fillna(0) > 0) | (df["handled"].fillna(0) > 0)).astype("boolean")
+    for c in ("avg_handle", "avg_talk", "avg_hold", "avg_acw"):
+        df[f"{c}_hhmmss"] = seconds_to_hhmmss(df[f"{c}_seconds"])
+    return order_columns(df.drop(columns=[c for c in ("interval_start_hour",) if c in df]), [
+        "report_date", "report_month", "weekday", "agent_id", "agent_name", "has_activity",
+        "answered", "handled", "total_handle_seconds", "avg_handle_seconds", "avg_handle_hhmmss",
+        "avg_handle_raw", "avg_talk_seconds", "avg_talk_hhmmss", "avg_hold_seconds",
+        "avg_hold_hhmmss", "avg_acw_seconds", "avg_acw_hhmmss", "held", "transferred",
+        "interval_complete", "interval_start", "interval_end", "interval_minutes",
+        "intervals_in_day", "media_type", "skills", "filters"])
 
 
 # =============================================================================
@@ -1186,7 +1300,7 @@ def cross_checks(data: dict[str, pd.DataFrame], dq: QualityReport) -> None:
                            ("" if v == q else " - agent file may use another time zone/day boundary, "
                             "another filter, or agents outside the skill filter took calls."))
     if perf is not None and st is not None and len(perf) and len(st):
-        logged = st[st["status"] == "Logged In"].groupby(["report_date", "agent_id"])["duration_seconds"].sum()
+        logged = st.groupby(["report_date", "agent_id"])["logged_in_seconds"].sum()
         act = perf[perf["answered"] > 0].set_index(["report_date", "agent_id"])
         for (d, a), r in act.iterrows():
             if (d, a) in logged.index and logged.loc[(d, a)] == 0:
@@ -1263,7 +1377,8 @@ def merge_with_history(name: str, new: pd.DataFrame, old: pd.DataFrame | None,
     if missing:
         raise DatasetError(f"Existing sheet {SHEETS[name]} lacks key columns {missing}; "
                            "run once with --no-history to rebuild it.")
-    old = _align_types(old.copy(), new)
+    old = upgrade_legacy_sheet(name, old.copy())
+    old = _align_types(old, new)
     new_cols, old_cols = set(new.columns), set(old.columns)
     if new_cols - old_cols:
         dq.add(name, "New columns not in history (blank for older rows)", "INFO",
@@ -1295,6 +1410,24 @@ def merge_with_history(name: str, new: pd.DataFrame, old: pd.DataFrame | None,
     return out[list(new.columns) + [c for c in out.columns if c not in new.columns]]
 
 
+def upgrade_legacy_sheet(name: str, old: pd.DataFrame) -> pd.DataFrame:
+    """Convert sheets written by the earlier version (agent x status rows) to the daily layout."""
+    if name in ("agent_status", "agent_performance") and "interval_start_hour" in old.columns:
+        old = old.drop(columns=["interval_start_hour"])
+    if name != "agent_status" or not {"status", "duration_seconds"} <= set(old.columns):
+        return old
+    log.info("Converting existing agent_status_clean sheet from one-row-per-status to one-row-per-agent-day")
+    to_key = {v[0]: k for k, v in STATUS_DEFINITIONS.items()}
+    old["_k"] = old["status"].map(lambda v: to_key.get(v, normalize_name(v)))
+    key = ["report_date", "agent_id"]
+    pv = old.pivot_table(index=key, columns="_k", values="duration_seconds", aggfunc="sum")
+    pv.columns = [f"{k}_seconds" for k in pv.columns]
+    drop = {"status", "status_group", "status_sort", "duration_seconds", "duration_minutes",
+            "duration_hours", "_k"}
+    meta = old.drop(columns=[c for c in old.columns if c in drop]).drop_duplicates(key).set_index(key)
+    return meta.join(pv).reset_index()
+
+
 def load_existing_workbook(path: Path) -> dict[str, pd.DataFrame]:
     if not path.exists():
         return {}
@@ -1310,7 +1443,7 @@ def load_existing_workbook(path: Path) -> dict[str, pd.DataFrame]:
 SORT_KEYS = {
     "service_level": ["report_date", "queue_name", "interval_start"],
     "abandoned": ["call_datetime", "conversation_id"],
-    "agent_status": ["report_date", "agent_name", "status_sort"],
+    "agent_status": ["report_date", "agent_name"],
     "agent_performance": ["report_date", "agent_name"],
 }
 
@@ -1390,6 +1523,10 @@ def run(cfg: Config) -> int:
             drop = [c for c in cfg.drop_columns.get(name, []) if c in new.columns]
             new = new.drop(columns=drop)
             merged = merge_with_history(name, new, old, dq)
+            if name == "agent_status":
+                merged = finalize_agent_status(merged)
+            elif name == "agent_performance":
+                merged = finalize_agent_performance(merged)
             merged = merged.sort_values([c for c in SORT_KEYS[name] if c in merged.columns],
                                         kind="stable").reset_index(drop=True)
             final[name] = merged

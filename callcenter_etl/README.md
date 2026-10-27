@@ -7,8 +7,26 @@
 |---|---|---|
 | `service_level_metrics_clean` | Queue performance (`AudiQPer-*.csv`) | queue × interval (currently 1 day) |
 | `abandoned_calls_clean` | Conversation detail (`AudiAban-*.csv`) | one call (conversation) |
-| `agent_status_clean` | Agent status (`AgentsSTA-*.csv`) | agent × interval × **status** (long format) |
-| `agent_performance_clean` | Agent performance (`AgentsPer-*.csv`) | agent × interval |
+| `agent_status_clean` | Agent status (`AgentsSTA-*.csv`) | **one agent per day**: one column per status |
+| `agent_performance_clean` | Agent performance (`AgentsPer-*.csv`) | **one agent per day**: daily totals and averages |
+
+### The two agent sheets: each agent appears once per day
+
+- **agent_status_clean**: for every status (Logged In, On Queue, Off Queue, Idle, Not Responding,
+  Available, Away, Break, Meal, Busy, Meeting, Training) there are three columns:
+  `<status>_seconds` (use in Power BI), `<status>_hhmmss` (readable, e.g. `08:00:50`) and
+  `<status>_pct_of_logged_in` (share of the agent's logged-in time that day).
+- **agent_performance_clean**: `answered`, `handled`, `held` and `transferred` are daily totals.
+  `total_handle_seconds` is the daily handle time. `avg_handle_seconds` / `avg_handle_hhmmss`
+  is the daily AHT (total handle time ÷ handled calls). Talk, hold and ACW averages also have
+  seconds and hh:mm:ss columns.
+- If a source file has several intervals per agent per day (e.g. an hourly export), they are
+  combined into one daily row. Times and counts are added up, and averages are weighted by calls
+  (talk and ACW by handled calls, hold by held calls), never averaged as averages.
+  `intervals_in_day` shows how many source rows were combined, and `source_row` lists them.
+  Exact duplicate rows are counted only once.
+- A workbook from the earlier version (one row per status) is converted automatically
+  the next time the script runs.
 
 Each run also writes a data-quality report (`data_quality_report_<time>.md`), a table of
 every check (`data_quality_checks_<time>.csv`), a log file, and a backup of the previous workbook.
@@ -76,7 +94,7 @@ Safety rules:
    - Available, Away, Break, Meal, Busy, Meeting and Training are presences *while Off Queue*.
      For 22 agents, Off Queue time is larger than the exported presences. Some presence
      statuses are probably not in the export.
-   - The `status_group` column holds these levels. Only sum or compare statuses inside one group.
+   - Only add together statuses from the same level, e.g. Break + Meal + Meeting, but never Logged In + Idle.
 5. **Agent performance vs queue (WARNING).** On 26 Oct the agent file has **6** answered calls.
    The queue file has **28**. The 6 calls in the agent file are all afternoon calls (after
    ~13:15), so the agent export probably uses a different time zone or day boundary. See the
@@ -137,14 +155,13 @@ Total Abandoned Calls  = SUM ( AB[abandoned_flag] )
 Abandon % (detail)     = DIVIDE ( [Total Abandoned Calls], [Call Records] )
 Avg Time to Abandon    = CALCULATE ( AVERAGE ( AB[time_to_abandon_seconds] ), AB[is_abandoned] = TRUE () )
 
--- Agent status (agent_status_clean = ST)
-Status Hours           = SUM ( ST[duration_hours] )
-Logged In Hours        = CALCULATE ( [Status Hours], ST[status] = "Logged In" )
-% of Logged In Time    = DIVIDE ( [Status Hours],
-                           CALCULATE ( [Status Hours], REMOVEFILTERS ( ST[status], ST[status_group], ST[status_sort] ),
-                                       ST[status] = "Logged In" ) )
-% Within Status Group  = DIVIDE ( [Status Hours],
-                           CALCULATE ( [Status Hours], REMOVEFILTERS ( ST[status], ST[status_sort] ) ) )
+-- Agent status (agent_status_clean = ST). One column per status; one row per agent per day.
+Logged In Hours        = SUM ( ST[logged_in_seconds] ) / 3600
+On Queue Hours         = SUM ( ST[on_queue_seconds] ) / 3600
+Break Hours            = SUM ( ST[break_seconds] ) / 3600        -- same pattern for every status
+On Queue % of Logged In = DIVIDE ( SUM ( ST[on_queue_seconds] ), SUM ( ST[logged_in_seconds] ) )
+Idle % of On Queue     = DIVIDE ( SUM ( ST[idle_seconds] ), SUM ( ST[on_queue_seconds] ) )
+Agents Logged In       = CALCULATE ( DISTINCTCOUNT ( ST[agent_id] ), ST[agent_logged_in] = TRUE () )
 
 -- Agent performance (agent_performance_clean = AP)
 Answered by Agent      = SUM ( AP[answered] )
@@ -155,8 +172,11 @@ AHT (mm:ss)            = VAR s = [AHT by Agent (sec)]
                                 FORMAT ( INT ( s / 60 ), "00" ) & ":" & FORMAT ( MOD ( s, 60 ), "00" ) )
 ```
 
-Status distribution visual: use a stacked bar with **one** `status_group` as a filter
-(e.g. "4 Presence (Off Queue)" or "2 Queue State") and the measure `% Within Status Group`.
+Status distribution visual: put the hour measures of one level in a stacked bar, e.g. On Queue +
+Off Queue, or Available + Away + Break + Meal + Busy + Meeting + Training. For a status slicer,
+unpivot the `*_seconds` columns in Power Query (Transform → Unpivot Columns). Do not use the
+`*_pct_of_logged_in` columns in totals: they are per agent per day, so averaging them gives the wrong
+result. Use the DIVIDE measures above instead.
 
 ## Open questions (the script uses the defaults shown)
 
