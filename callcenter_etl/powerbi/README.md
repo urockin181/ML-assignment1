@@ -23,20 +23,33 @@ Audi-red line, light silver page, white rounded tiles. Each page fits one 16:9 s
 **Colors follow the targets: green = meets the target, red = misses it.** Values without a
 target (e.g. Offered, Answered, Agents logged in) stay black.
 
+## Latest day by default
+
+Both pages open on the **latest day**: the "Day" filter in the header is preset to
+**"Latest day"**, and that label moves to the newest date with data on every refresh, so you
+never have to change the filter. The "Showing" tile next to it shows the actual date.
+
+- Queue Overview uses the newest day with calls (queue and call-detail files).
+- Agents uses the newest day in the agent files. The daily agent exports usually arrive a day
+  later than the queue data, so the two pages can show different dates.
+- To look at other days, open the Day filter and pick one or several dates (Ctrl+click).
+  Dates after the latest day are listed as "No data yet".
+
 ## Pages
 
 ### 1. Queue Overview (sheets `service_level_metrics_clean` + `abandoned_calls_clean`)
-- Header with a date range slicer.
+- Header with the Day filter (default "Latest day") and the "Showing" date tile.
 - KPI tiles: Offered, Answered, Abandoned and Abandon % (green within 5 %, red above),
   Service Level % (green from 80 %, red below), Avg Speed of Answer.
 - Daily Service Level: one bar per day, green when the day meets 80 %, red when below.
   Hovering shows Offered, Answered, Abandoned and Abandon %.
 - Gauge: Service Level against the 80 % target (black line), green or red.
-- Calls by hour: green when that hour's abandon rate is within 5 %, red when above.
+- Calls by hour, with the number of calls on each bar: green when that hour's abandon rate is
+  within 5 %, red when above.
 - Compact list of abandoned calls, newest first.
 
 ### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`)
-- Header with date range and agent slicers.
+- Header with the Day filter (default "Latest day"), the "Showing" date tile and an agent filter.
 - KPI tiles:
   - **Agents logged in**
   - **Breaks over 1 hour**: number of agent-days over the limit (green when 0)
