@@ -117,8 +117,8 @@ above prevents the same data from being loaded twice.
 
 - `dq_flags`: every row-level problem found for that row (blank = clean).
 - `source_file`, `source_row`, `load_timestamp`: trace each row back to its CSV line.
-- Durations are in **seconds** (`*_seconds`). Agent status also has `duration_minutes` and
-  `duration_hours`. Original strings are kept in `time_to_abandon_raw` and `avg_handle_raw`.
+- Durations are in **seconds** (`*_seconds`). The agent sheets also show them as readable
+  `*_hhmmss` text. Original strings are kept in `time_to_abandon_raw` and `avg_handle_raw`.
 - Percentages are **fractions** (0.6786). Set the Power BI format to Percentage.
 - `*_source` = value from Genesys. `*_calc` = recalculated by the script for validation.
 - `total_handle_seconds = avg_handle_seconds × handled` and
