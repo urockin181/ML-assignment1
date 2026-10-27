@@ -34,12 +34,17 @@ alert**, and silver/grey means unknown. Each page fits one 16:9 screen with no s
 
 ### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`)
 - Header with date range and agent slicers.
-- KPI tiles: Agents logged in, Breaks over 1 hour (red), Avg break per agent,
-  Not Responding time (red), Not Responding events (red), On Queue % of logged-in time.
+- KPI tiles:
+  - **Agents logged in**
+  - **Breaks over 1 hour**: number of agent-days over the limit (red)
+  - **Longest break**: agent with the longest break and its length, e.g. "Hossam Zeid · 2h 06m"
+  - **Not Responding Agents**: number of agents with any Not Responding time (red)
+  - **Most time Not Responding**: agent with the most Not Responding time, e.g. "Berta Hanna · 38 min"
+  - **Agents who took Meal**: number of agents with any Meal time (Meal is not allowed)
 - **Break per agent**: bars turn red when an agent's break is over the 1-hour limit
   (with a multi-day date range: the average break per logged-in day).
 - Break times are shown as **"45 min"** below one hour and as **"2h 06m"** from one hour up
-  (KPI tile, chart labels and scorecard).
+  (tiles, chart labels and scorecard).
 - **Not Responding per agent**: minutes in Not Responding; hovering shows the duration and the
   number of events. Only agents with Not Responding time are listed.
 - **On Queue and Idle per agent** (hours); hovering shows On Queue % of logged-in time.
