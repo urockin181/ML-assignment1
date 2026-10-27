@@ -39,11 +39,11 @@ target (e.g. Offered, Answered, Agents logged in) stay black.
 - Header with date range and agent slicers.
 - KPI tiles:
   - **Agents logged in**
-  - **Breaks over 1 hour**: number of agent-days over the limit (red)
-  - **Longest break**: agent with the longest break and its length, e.g. "Hossam Zeid · 2h 06m"
-  - **Not Responding Agents**: number of agents with any Not Responding time (red)
+  - **Breaks over 1 hour**: number of agent-days over the limit (green when 0)
+  - **Longest break**: agent with the longest break and its length, e.g. "Hossam Zeid · 2h 06m" (green within 1 hour, red over)
+  - **Not Responding Agents**: number of agents with any Not Responding time (green when 0)
   - **Most time Not Responding**: agent with the most Not Responding time, e.g. "Berta Hanna · 38 min"
-  - **Agents who took Meal**: number of agents with any Meal time (Meal is not allowed)
+  - **Agents who took Meal**: number of agents with any Meal time (Meal is not allowed; green when 0)
 - **Break per agent**: green within the 1-hour limit, red over it
   (with a multi-day date range: the average break per logged-in day).
 - Break times are shown as **"45 min"** below one hour and as **"2h 06m"** from one hour up
