@@ -120,6 +120,9 @@ above prevents the same data from being loaded twice.
 - Durations are in **seconds** (`*_seconds`). The agent sheets also show them as readable
   `*_hhmmss` text. Original strings are kept in `time_to_abandon_raw` and `avg_handle_raw`.
 - Percentages are **fractions** (0.6786). Set the Power BI format to Percentage.
+- `not_responding_count` (agent performance): number of Not Responding events. Filled when the
+  Agent Performance export includes the Genesys column "Alert - No Answer"; otherwise left blank
+  (unknown), never 0.
 - `*_source` = value from Genesys. `*_calc` = recalculated by the script for validation.
 - `total_handle_seconds = avg_handle_seconds × handled` and
   `total_answer_wait_seconds = asa_seconds × answered`. These give correctly weighted averages.

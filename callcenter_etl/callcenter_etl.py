@@ -240,6 +240,9 @@ STATUS_DEFINITIONS = {
 }
 UNMAPPED_STATUS_GROUP = "9 Unmapped (review)"
 
+NOT_RESPONDING_COUNT_NAMES = ["alert_no_answer", "alerts_no_answer", "alert_no_answer_count",
+                              "not_responding", "not_responding_count", "no_answer"]
+
 AGENT_PERFORMANCE_SPEC = {
     "interval_start": (["interval_start"], True),
     "interval_end": (["interval_end"], False),
@@ -256,6 +259,9 @@ AGENT_PERFORMANCE_SPEC = {
     "avg_acw": (["avg_acw"], False),
     "held": (["held", "hold"], False),
     "transferred": (["transferred", "transfer"], False),
+    # Number of Not Responding events. Not in the current export: add the Genesys column
+    # "Alert - No Answer" to the Agent Performance view to fill it.
+    "not_responding_count": (NOT_RESPONDING_COUNT_NAMES, False),
     "skills": (["skills", "skill"], True),
 }
 
@@ -1157,7 +1163,11 @@ def collapse_to_agent_day(df: pd.DataFrame, sum_cols: list[str], dataset: str,
 def process_agent_performance(path: Path, cfg: Config, dq: QualityReport, load_ts) -> pd.DataFrame:
     ds = "agent_performance"
     df = normalize_columns(read_csv_robust(path, cfg, dq, ds), ds)
+    has_nr_count = any(c in df.columns for c in NOT_RESPONDING_COUNT_NAMES)
     df = resolve_columns(df, AGENT_PERFORMANCE_SPEC, ds, dq)
+    if not has_nr_count:
+        dq.add(ds, "No Not Responding count column (e.g. 'Alert - No Answer') in this export", "INFO",
+               detail="not_responding_count is left blank (unknown), not 0.")
     if df["agent_id"].isna().all() and df["agent_name"].isna().all():
         raise DatasetError("Neither Agent Id nor Agent Name found - cannot identify agents.")
 
@@ -1168,7 +1178,8 @@ def process_agent_performance(path: Path, cfg: Config, dq: QualityReport, load_t
     dq.check(ds, "Unexpected Interval Complete values", bad, df)
     check_agent_identity(df, ds, dq)
 
-    for c in ["answered", "handled", "held", "transferred"]:
+    count_cols = ["answered", "handled", "held", "transferred"] + (["not_responding_count"] if has_nr_count else [])
+    for c in count_cols:
         df[c], bad = parse_count(df[c], cfg.blank_counts_as_zero)
         dq.check(ds, f"Invalid count in '{c}'", bad, df, example_cols=["agent_name"])
         flags.append((f"invalid_{c}", bad))
@@ -1218,7 +1229,9 @@ def process_agent_performance(path: Path, cfg: Config, dq: QualityReport, load_t
     df["_w_talk"] = df["avg_talk_seconds"] * h
     df["_w_acw"] = df["avg_acw_seconds"] * h
     df["_w_hold"] = df["avg_hold_seconds"] * df["held"].astype("float64")
-    sums = ["answered", "handled", "held", "transferred", "total_handle_seconds",
+    if not has_nr_count:
+        df["not_responding_count"] = pd.array([pd.NA] * len(df), dtype="Int64")
+    sums = ["answered", "handled", "held", "transferred", "not_responding_count", "total_handle_seconds",
             "_w_talk", "_w_acw", "_w_hold"]
     daily = collapse_to_agent_day(df, sums, ds, dq)
     multi = daily["intervals_in_day"] > 1
@@ -1245,7 +1258,7 @@ def finalize_agent_performance(df: pd.DataFrame) -> pd.DataFrame:
         "report_date", "report_month", "weekday", "agent_id", "agent_name", "has_activity",
         "answered", "handled", "total_handle_seconds", "avg_handle_seconds", "avg_handle_hhmmss",
         "avg_handle_raw", "avg_talk_seconds", "avg_talk_hhmmss", "avg_hold_seconds",
-        "avg_hold_hhmmss", "avg_acw_seconds", "avg_acw_hhmmss", "held", "transferred",
+        "avg_hold_hhmmss", "avg_acw_seconds", "avg_acw_hhmmss", "held", "transferred", "not_responding_count",
         "interval_complete", "interval_start", "interval_end", "interval_minutes",
         "intervals_in_day", "media_type", "skills", "filters"])
 

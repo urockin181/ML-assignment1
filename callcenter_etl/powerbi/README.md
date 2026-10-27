@@ -32,17 +32,24 @@ alert**, and silver/grey means unknown. Each page fits one 16:9 screen with no s
 - Calls by hour of day (silver) with abandoned calls (red).
 - Compact list of abandoned calls, newest first.
 
-### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`), compliance first
+### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`)
 - Header with date range and agent slicers.
-- KPI tiles: Allowed status % (red below 90 %), Non-allowed time (red), Unknown status time
-  (grey), Agents logged in, Answered, Avg Handle Time.
-- Ranking of agents by non-allowed hours (red bars). Hovering over a bar shows the split into
-  Away / Meal / Busy / Not Responding.
-- Status mix per agent: share of logged-in time that is allowed (black), not allowed (red) and
-  unknown (grey).
-- Compact agent scorecard sorted by non-allowed time: Logged in, Allowed %, Non-allowed (red cell),
-  Unknown (grey cell), Answered, Handled, AHT.
+- KPI tiles: Agents logged in, Breaks over 1 hour (red), Avg break per agent (min),
+  Not Responding time (red), Not Responding events (red), On Queue % of logged-in time.
+- **Break minutes per agent**: bars turn red when an agent's break is over the 60-minute limit
+  (with a multi-day date range: the average break per logged-in day).
+- **Not Responding per agent**: minutes in Not Responding; hovering shows the duration and the
+  number of events. Only agents with Not Responding time are listed.
+- **On Queue and Idle per agent** (hours); hovering shows On Queue % of logged-in time.
+- **Other statuses per agent** (minutes): Meal, Away, Busy, Meeting, Training.
+- **Agent scorecard**: Logged in, On Queue, On Queue %, Idle, Break (red cell over 1 hour),
+  Not Responding (red cell when > 0), NR events, Meal (red cell when > 0), Answered, AHT.
 - Agents with the skill who never logged in are hidden on this page.
+
+**Not Responding events (count).** The current exports only contain the *duration* of Not
+Responding. The number of events shows "n/a" until you add the Genesys column **"Alert - No Answer"**
+to the Agent Performance export. `callcenter_etl.py` picks it up automatically
+(`not_responding_count`) and the dashboard shows it after a refresh.
 
 ## Status rules
 
@@ -75,6 +82,7 @@ The source data has no targets, so these measures hold placeholder values. Chang
 | Service Level Target % | service_level_metrics_clean | 0.80 |
 | Abandon Target % | service_level_metrics_clean | 0.05 |
 | Allowed Status Target % | agent_status_clean | 0.90 |
+| Break Limit (min) | agent_status_clean | 60 |
 
 ## Model
 
