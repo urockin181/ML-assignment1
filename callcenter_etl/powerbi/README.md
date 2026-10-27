@@ -18,18 +18,21 @@
 ## Design
 
 Audi-style theme (custom theme `AudiEHD.json` inside the project): black header bar with an
-Audi-red line, light silver page, white rounded tiles. Black means on target, **Audi red means
-alert**, and silver/grey means unknown. Each page fits one 16:9 screen with no scrolling.
+Audi-red line, light silver page, white rounded tiles. Each page fits one 16:9 screen with no scrolling.
+
+**Colors follow the targets: green = meets the target, red = misses it.** Values without a
+target (e.g. Offered, Answered, Agents logged in) stay black.
 
 ## Pages
 
 ### 1. Queue Overview (sheets `service_level_metrics_clean` + `abandoned_calls_clean`)
 - Header with a date range slicer.
-- KPI tiles: Offered, Answered, Abandoned, Abandon % (red above 5 %), Service Level % (red
-  below 80 %), Avg Speed of Answer.
-- Daily calls (answered in black, abandoned stacked in red) with a Service Level % line.
-- Gauge: Service Level against the 80 % target.
-- Calls by hour of day (silver) with abandoned calls (red).
+- KPI tiles: Offered, Answered, Abandoned and Abandon % (green within 5 %, red above),
+  Service Level % (green from 80 %, red below), Avg Speed of Answer.
+- Daily Service Level: one bar per day, green when the day meets 80 %, red when below.
+  Hovering shows Offered, Answered, Abandoned and Abandon %.
+- Gauge: Service Level against the 80 % target (black line), green or red.
+- Calls by hour: green when that hour's abandon rate is within 5 %, red when above.
 - Compact list of abandoned calls, newest first.
 
 ### 2. Agents (sheets `agent_status_clean` + `agent_performance_clean`)
@@ -41,14 +44,16 @@ alert**, and silver/grey means unknown. Each page fits one 16:9 screen with no s
   - **Not Responding Agents**: number of agents with any Not Responding time (red)
   - **Most time Not Responding**: agent with the most Not Responding time, e.g. "Berta Hanna · 38 min"
   - **Agents who took Meal**: number of agents with any Meal time (Meal is not allowed)
-- **Break per agent**: bars turn red when an agent's break is over the 1-hour limit
+- **Break per agent**: green within the 1-hour limit, red over it
   (with a multi-day date range: the average break per logged-in day).
 - Break times are shown as **"45 min"** below one hour and as **"2h 06m"** from one hour up
   (tiles, chart labels and scorecard).
-- **Not Responding per agent**: minutes in Not Responding; hovering shows the duration and the
+- **Not Responding per agent** (target 0, so every bar is red): minutes in Not Responding; hovering shows the duration and the
   number of events. Only agents with Not Responding time are listed.
-- **On Queue and Idle per agent** (hours); hovering shows On Queue % of logged-in time.
-- **Other statuses per agent** (minutes): Meal, Away, Busy, Meeting, Training.
+- **On Queue hours per agent**: green when On Queue is at least 70 % of the agent's logged-in time,
+  red when below. Hovering shows On Queue %, and Idle time.
+- **Other statuses per agent** (minutes): Meal, Away, Busy in red (not allowed); Meeting and
+  Training in green (allowed).
 - **Agent scorecard**: Logged in, On Queue, On Queue %, Idle, Break (red cell over 1 hour),
   Not Responding (red cell when > 0), NR events, Meal (red cell when > 0), Answered, AHT.
 - Agents with the skill who never logged in are hidden on this page.
@@ -90,6 +95,7 @@ The source data has no targets, so these measures hold placeholder values. Chang
 | Abandon Target % | service_level_metrics_clean | 0.05 |
 | Allowed Status Target % | agent_status_clean | 0.90 |
 | Break Limit (min) | agent_status_clean | 60 |
+| On Queue Target % | agent_status_clean | 0.70 (placeholder, please confirm) |
 
 ## Model
 
