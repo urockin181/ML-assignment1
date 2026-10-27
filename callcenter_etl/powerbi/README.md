@@ -32,30 +32,32 @@
 - Cards: Agents Logged In, Logged In time, Allowed Status %, **Non-Allowed Status Time (red)**,
   Answered, Handled, AHT.
 - Stacked bar per agent: hours in each status. Allowed statuses are blue/green, non-allowed
-  statuses are shades of red.
-- Donut: share of time in On Queue, Available, Break, Meeting, Training and Non-Allowed (red).
+  statuses are shades of red, unknown status is grey.
+- Donut: share of time in On Queue, Available, Break, Meeting, Training, Non-Allowed (red) and
+  Unknown (grey).
 - Status table, one row per agent, times as hh:mm:ss. Every non-allowed column gets a **red
-  cell** when the agent spent any time in that status. *Allowed %* is red below target (90 %).
+  cell** when the agent spent any time in that status. The *Unknown (Other Off-Queue)* column
+  turns grey when it has time. *Allowed %* is red below target (90 %).
 - Performance table: Answered, Handled, AHT, Avg Talk / Hold / ACW, Held, Transferred.
 - Bar chart: answered and handled calls by agent.
 
 ## Status rules
 
-| Allowed (normal colors) | Not allowed (red) |
-|---|---|
-| On Queue (includes Idle) | Away |
-| Idle | Meal |
-| Available | Busy |
-| Break | Not Responding (missed alerts while On Queue) |
-| Meeting | Other Off-Queue (*) |
-| Training | |
+| Allowed (normal colors) | Not allowed (red) | Unknown (grey) |
+|---|---|---|
+| On Queue (includes Idle) | Away | Other Off-Queue (*) |
+| Idle | Meal | |
+| Available | Busy | |
+| Break | Not Responding (missed alerts while On Queue) | |
+| Meeting | | |
+| Training | | |
 
 (*) **Other Off-Queue** = Off Queue time not covered by any exported presence status (Available,
 Away, Break, Meal, Busy, Meeting, Training). Genesys records it under a status that isn't in the
-export, so it can't be confirmed as an allowed status and is shown in red.
+export, so it is shown in grey as "Unknown". It is **not** counted as non-allowed time.
 
-Allowed time + Non-allowed time = Logged In time for every agent. Allowed Status % is
-Allowed time ÷ Logged In time.
+Allowed time + Non-allowed time + Unknown time = Logged In time for every agent.
+Allowed Status % = Allowed time ÷ Logged In time.
 
 Idle is part of On Queue, so it is shown as its own column in the table but is not stacked a
 second time in the bar chart.
