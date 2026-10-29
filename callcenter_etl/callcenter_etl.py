@@ -34,7 +34,7 @@ Input folders
 Set the four input folders and the output folder in the block marked
 ">>> EDIT YOUR FOLDER PATHS HERE <<<" below. Each run processes every CSV in
 those folders that has not been processed before (oldest first) and records it
-in <output>/processed_files.json. A file that is overwritten with new content is
+in the workbook's run_log sheet. A file that is overwritten with new content is
 processed again. An export type with no new files keeps its sheet unchanged.
 
 Usage
@@ -45,13 +45,19 @@ Usage
 
 Run with --help for all options. Other defaults live in the Config class below.
 
-Outputs (in --output-dir)
--------------------------
-    callcenter_powerbi_clean.xlsx              four clean sheets (cumulative)
-    callcenter_powerbi_clean.backup.xlsx       previous version of the workbook
-    data_quality_report_<timestamp>.md         human-readable data-quality report
-    data_quality_checks_<timestamp>.csv        every check as a table
-    etl_<timestamp>.log                        full processing log
+Output
+------
+ONE Excel file and nothing else: <output folder>/callcenter_powerbi_clean.xlsx
+
+    service_level_metrics_clean   \
+    abandoned_calls_clean          |  data sheets (all records from every run)
+    agent_status_clean             |
+    agent_performance_clean       /
+    run_log                       one row per file per run (also used to skip
+                                  files that were already processed)
+    data_quality_log              warnings / errors found in every run
+
+Progress messages are printed to the console only.
 
 Requires: Python 3.9+, pandas, openpyxl.
 """
@@ -60,11 +66,12 @@ from __future__ import annotations
 import argparse
 import csv
 import io
-import json
 import logging
+import os
 import re
 import shutil
 import sys
+import tempfile
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -81,7 +88,8 @@ log = logging.getLogger("callcenter_etl")
 # One folder per export type. Every day, drop the new CSV into its folder and
 # run the script: it processes every CSV it has not processed before (oldest
 # first) and adds it to the output workbook. Processed files are remembered in
-# <OUTPUT_FOLDER>/processed_files.json, so nothing is loaded twice.
+# the workbook's run_log sheet, so nothing is loaded twice. The workbook is the
+# only file the script writes.
 #
 # Use the full path inside r"..." (the r keeps Windows backslashes intact).
 # Leave a path empty ("") to skip that export type.
@@ -114,9 +122,8 @@ class Config:
     agent_status_csv: Path | None = None
     agent_performance_csv: Path | None = None
 
-    # True = ignore processed_files.json and process every file in the folders again.
+    # True = ignore the run_log and process every file in the folders again.
     reprocess_all: bool = False
-    manifest_name: str = "processed_files.json"
 
     output_dir: Path = Path(OUTPUT_FOLDER)
     output_workbook_name: str = "callcenter_powerbi_clean.xlsx"
@@ -164,7 +171,6 @@ class Config:
     daily_interval_min_hours: float = 20.0
 
     append_history: bool = True
-    keep_backup: bool = True
 
     # Columns to drop from the output (e.g. ["remote"] to hide caller numbers).
     drop_columns: dict[str, list[str]] = field(default_factory=dict)
@@ -358,45 +364,12 @@ class QualityReport:
         return pd.DataFrame(self.rows, columns=["dataset", "check", "status",
                                                 "affected_rows", "detail", "examples"])
 
-    def write(self, out_dir: Path, stamp: str) -> tuple[Path, Path]:
-        csv_path = out_dir / f"data_quality_checks_{stamp}.csv"
-        md_path = out_dir / f"data_quality_report_{stamp}.md"
-        frame = self.to_frame()
-        frame.to_csv(csv_path, index=False, encoding="utf-8-sig")
-
-        lines = [f"# Data-quality report - {stamp}", ""]
-        lines += ["## Processing summary", ""]
-        if self.summary:
-            keys: list[str] = []
-            for vals in self.summary.values():
-                keys += [k for k in vals if k not in keys]
-            lines.append("| dataset | " + " | ".join(keys) + " |")
-            lines.append("|---|" + "---|" * len(keys))
-            for ds, vals in self.summary.items():
-                lines.append(f"| {ds} | " + " | ".join(_fmt(vals.get(k, "")) for k in keys) + " |")
-        lines.append("")
-        counts = frame["status"].value_counts().to_dict() if len(frame) else {}
-        lines.append("Check results: " + ", ".join(f"{k}: {v}" for k, v in counts.items()))
-        lines.append("")
-        for status in ("ERROR", "WARNING", "INFO"):
-            part = frame[frame["status"] == status]
-            if part.empty:
-                continue
-            lines += [f"## {status} ({len(part)})", ""]
-            for _, r in part.iterrows():
-                n = "" if pd.isna(r["affected_rows"]) else f" - **{int(r['affected_rows'])} rows**"
-                lines.append(f"- **[{r['dataset']}] {r['check']}**{n}")
-                if r["detail"]:
-                    lines.append(f"  - {r['detail']}")
-                if r["examples"]:
-                    lines.append(f"  - Examples: {r['examples']}")
-            lines.append("")
-        ok = frame[frame["status"] == "OK"]
-        if not ok.empty:
-            lines += [f"## Passed checks ({len(ok)})", ""]
-            lines += [f"- [{r['dataset']}] {r['check']}" for _, r in ok.iterrows()]
-        md_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-        return md_path, csv_path
+    def log_rows(self, run_ts: pd.Timestamp) -> pd.DataFrame:
+        """Non-OK checks of this run, for the data_quality_log sheet."""
+        f = self.to_frame()
+        f = f[f["status"] != "OK"].copy()
+        f.insert(0, "run_timestamp", run_ts)
+        return f
 
 
 def _fmt(v) -> str:
@@ -1494,10 +1467,27 @@ SORT_KEYS = {
 }
 
 
-def write_workbook(path: Path, sheets: dict[str, pd.DataFrame], keep_backup: bool) -> None:
-    """Write via a temp file and then replace, so a crash never corrupts history."""
-    tmp = path.with_name(path.stem + ".tmp.xlsx")
-    with pd.ExcelWriter(tmp, engine="openpyxl", datetime_format="yyyy-mm-dd hh:mm:ss",
+def write_workbook(path: Path, sheets: dict[str, pd.DataFrame]) -> None:
+    """
+    Write the workbook in the system temp folder first, then move it into place,
+    so a crash never leaves a half-written workbook. Nothing else is written to
+    the output folder.
+    """
+    fd, tmp_name = tempfile.mkstemp(suffix=".xlsx", prefix="callcenter_")
+    os.close(fd)
+    tmp = Path(tmp_name)
+    try:
+        _write_sheets(tmp, sheets)
+        shutil.move(str(tmp), str(path))
+    except PermissionError as exc:
+        raise SystemExit(f"Cannot overwrite {path} - close it in Excel / Power BI and run again. {exc}")
+    finally:
+        if tmp.exists():
+            tmp.unlink()
+
+
+def _write_sheets(target: Path, sheets: dict[str, pd.DataFrame]) -> None:
+    with pd.ExcelWriter(target, engine="openpyxl", datetime_format="yyyy-mm-dd hh:mm:ss",
                         date_format="yyyy-mm-dd") as xw:
         for sheet, df in sheets.items():
             out = df.copy()
@@ -1510,12 +1500,6 @@ def write_workbook(path: Path, sheets: dict[str, pd.DataFrame], keep_backup: boo
             ws.auto_filter.ref = ws.dimensions
             for i, col in enumerate(out.columns, start=1):
                 ws.column_dimensions[ws.cell(1, i).column_letter].width = min(max(len(str(col)) + 2, 12), 40)
-    if path.exists() and keep_backup:
-        shutil.copy2(path, path.with_name(path.stem + ".backup.xlsx"))
-    try:
-        tmp.replace(path)
-    except PermissionError as exc:
-        raise SystemExit(f"Cannot overwrite {path} (open in Excel?). New data left in {tmp}. {exc}")
 
 
 # =============================================================================
@@ -1529,28 +1513,31 @@ PROCESSORS = {
 }
 
 
-def file_signature(path: Path) -> list:
-    """Size + modification time: a file that is replaced with new content is processed again."""
+RUN_LOG_SHEET = "run_log"
+DQ_LOG_SHEET = "data_quality_log"
+RUN_LOG_COLUMNS = ["run_timestamp", "dataset", "status", "file_name", "file_path", "file_size_bytes",
+                   "file_modified", "file_signature", "rows_in_file", "rows_in_sheet_after", "message"]
+DQ_LOG_COLUMNS = ["run_timestamp", "dataset", "check", "status", "affected_rows", "detail", "examples"]
+
+
+def file_signature(path: Path) -> str:
+    """Size + modification time as text: a file replaced with new content is processed again."""
     st_ = path.stat()
-    return [st_.st_size, st_.st_mtime_ns]
+    return f"{st_.st_size}|{st_.st_mtime_ns}"
 
 
-def load_manifest(path: Path) -> dict:
-    if not path.exists():
-        return {}
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise SystemExit(f"Cannot read {path} ({exc}). Fix or delete it (all files are then processed again).")
+def processed_files(run_log: pd.DataFrame | None) -> dict[str, dict[str, str]]:
+    """{dataset: {absolute file path: signature}} of files already processed in earlier runs."""
+    done: dict[str, dict[str, str]] = {}
+    if run_log is None or run_log.empty or "status" not in run_log:
+        return done
+    ok = run_log[run_log["status"].astype(str) == "processed"]
+    for row in ok.itertuples():
+        done.setdefault(str(row.dataset), {})[str(row.file_path)] = str(row.file_signature)
+    return done
 
 
-def save_manifest(path: Path, manifest: dict) -> None:
-    tmp = path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2, sort_keys=True), encoding="utf-8")
-    tmp.replace(path)
-
-
-def collect_inputs(name: str, cfg: Config, manifest: dict, dq: QualityReport) -> list[Path]:
+def collect_inputs(name: str, cfg: Config, done: dict, dq: QualityReport, runlog: list) -> list[Path]:
     """Files to process for one export type: the single file (if given) + new files in the folder."""
     file_attr, dir_attr, _ = PROCESSORS[name]
     files: list[Path] = []
@@ -1562,38 +1549,38 @@ def collect_inputs(name: str, cfg: Config, manifest: dict, dq: QualityReport) ->
         d = Path(folder)
         if not d.is_dir():
             dq.add(name, "Input folder not found", "ERROR", detail=str(d))
+            runlog.append({"dataset": name, "status": "folder not found", "file_path": str(d),
+                           "message": "Check the folder path at the top of the script"})
             return files
         csvs = [f for f in d.iterdir()
                 if f.is_file() and f.suffix.lower() == ".csv" and not f.name.startswith(("~$", "."))]
         csvs.sort(key=lambda f: (f.stat().st_mtime, f.name))   # oldest first, newest wins
-        done = manifest.get(name, {})
-        new = [f for f in csvs if cfg.reprocess_all or done.get(str(f.resolve()), {}).get("signature") != file_signature(f)]
+        seen = done.get(name, {})
+        new = [f for f in csvs if cfg.reprocess_all or seen.get(str(f.resolve())) != file_signature(f)]
         dq.add(name, f"Folder {d}", "INFO",
                detail=f"{len(csvs)} CSV files, {len(new)} new or changed, {len(csvs) - len(new)} already processed")
         files += new
+        if not files:
+            runlog.append({"dataset": name, "status": "no new files", "file_path": str(d),
+                           "message": "Sheet kept unchanged"})
     return files
 
 
 def run(cfg: Config) -> int:
-    """Process all new input files and write outputs. Returns an exit code."""
+    """Process all new input files and update the single output workbook. Returns an exit code."""
     cfg.output_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_path = cfg.output_dir / f"etl_{stamp}.log"
-    fh = logging.FileHandler(log_path, encoding="utf-8")
-    fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
-    log.addHandler(fh)
-
     dq = QualityReport()
-    load_ts = pd.Timestamp.now().floor("s")
+    run_ts = pd.Timestamp.now().floor("s")
     wb_path = cfg.output_dir / cfg.output_workbook_name
-    manifest_path = cfg.output_dir / cfg.manifest_name
     if not cfg.append_history:
         cfg.reprocess_all = True          # rebuilding: every file in the folders is needed
-    manifest = {} if cfg.reprocess_all else load_manifest(manifest_path)
     existing = load_existing_workbook(wb_path) if cfg.append_history else {}
     if existing:
         log.info("Existing workbook found: %s (%s)", wb_path,
                  ", ".join(f"{k}: {len(v)} rows" for k, v in existing.items()))
+    old_runlog = existing.get(RUN_LOG_SHEET)
+    old_dqlog = existing.get(DQ_LOG_SHEET)
+    done = {} if cfg.reprocess_all else processed_files(old_runlog)
 
     configured = [k for k, (fa, da, _) in PROCESSORS.items() if getattr(cfg, fa) or getattr(cfg, da)]
     if not configured:
@@ -1603,19 +1590,20 @@ def run(cfg: Config) -> int:
 
     final: dict[str, pd.DataFrame] = {}
     failed: list[str] = []
-    processed: dict[str, list[Path]] = {}
+    runlog: list[dict] = []
+    n_processed = 0
     for name, (_, _, func) in PROCESSORS.items():
         current = existing.get(SHEETS[name])
-        paths = collect_inputs(name, cfg, manifest, dq)
-        if not paths:
-            if current is not None:
-                final[name] = current
-                dq.add(name, "No new files - existing sheet kept unchanged", "INFO", len(current))
-            continue
-        for path in paths:
+        for path in collect_inputs(name, cfg, done, dq, runlog):
+            path = Path(path)
+            entry = {"dataset": name, "file_name": path.name, "file_path": str(path.resolve())}
+            if path.exists():
+                st_ = path.stat()
+                entry.update(file_size_bytes=st_.st_size, file_signature=file_signature(path),
+                             file_modified=pd.Timestamp(st_.st_mtime, unit="s").floor("s"))
             log.info("=== Processing %s: %s ===", name, path)
             try:
-                new = func(Path(path), cfg, dq, load_ts)
+                new = func(path, cfg, dq, run_ts)
                 drop = [c for c in cfg.drop_columns.get(name, []) if c in new.columns]
                 new = new.drop(columns=drop)
                 merged = merge_with_history(name, new, current, dq)
@@ -1625,39 +1613,35 @@ def run(cfg: Config) -> int:
                     merged = finalize_agent_performance(merged)
                 current = merged.sort_values([c for c in SORT_KEYS[name] if c in merged.columns],
                                              kind="stable").reset_index(drop=True)
-                processed.setdefault(name, []).append(Path(path))
+                entry.update(status="processed", rows_in_file=len(new), rows_in_sheet_after=len(current))
+                n_processed += 1
             except DatasetError as exc:
-                failed.append(f"{name}: {Path(path).name}")
-                dq.add(name, f"File could not be processed: {Path(path).name}", "ERROR", detail=str(exc))
+                failed.append(f"{name}: {path.name}")
+                dq.add(name, f"File could not be processed: {path.name}", "ERROR", detail=str(exc))
+                entry.update(status="failed", message=str(exc)[:1000])
+            runlog.append(entry)
         if current is not None:
             final[name] = current
-            dq.set_summary(name, files_processed=len(processed.get(name, [])), rows_in_sheet=len(current))
 
     cross_checks({k: v for k, v in final.items()}, dq)
 
+    # This run's logs are appended to the history kept inside the workbook.
+    new_runlog = pd.DataFrame(runlog, columns=RUN_LOG_COLUMNS[1:])
+    new_runlog.insert(0, "run_timestamp", run_ts)
+    frames = [f for f in (old_runlog, new_runlog) if f is not None and len(f)]
+    run_log = pd.concat(frames, ignore_index=True) if frames else new_runlog
+    frames = [f for f in (old_dqlog, dq.log_rows(run_ts)) if f is not None and len(f)]
+    dq_log = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=DQ_LOG_COLUMNS)
+
     sheets = {SHEETS[k]: final[k] for k in PROCESSORS if k in final}
-    if processed and sheets:
-        write_workbook(wb_path, sheets, cfg.keep_backup)
-        log.info("Workbook written: %s", wb_path)
-        # Remember the files only after the workbook was saved, so a failed run retries them.
-        for name, paths in processed.items():
-            for pth in paths:
-                manifest.setdefault(name, {})[str(pth.resolve())] = {
-                    "signature": file_signature(pth), "processed_at": datetime.now().isoformat(timespec="seconds")}
-        save_manifest(manifest_path, manifest)
-    elif not processed:
-        log.info("No new files to process - workbook left unchanged: %s", wb_path)
-    md, csv_path = dq.write(cfg.output_dir, stamp)
-    log.info("Data-quality report: %s", md)
-    log.info("Check table: %s", csv_path)
-    log.info("Log file: %s", log_path)
+    sheets[RUN_LOG_SHEET] = run_log[[c for c in RUN_LOG_COLUMNS if c in run_log.columns]]
+    sheets[DQ_LOG_SHEET] = dq_log[[c for c in DQ_LOG_COLUMNS if c in dq_log.columns]]
+    write_workbook(wb_path, sheets)
+    log.info("Workbook written: %s", wb_path)
     n_err = sum(r["status"] == "ERROR" for r in dq.rows)
     n_warn = sum(r["status"] == "WARNING" for r in dq.rows)
-    log.info("Finished: %d files processed, %d errors, %d warnings%s",
-             sum(len(v) for v in processed.values()), n_err, n_warn,
-             f"; FAILED: {', '.join(failed)}" if failed else "")
-    log.removeHandler(fh)
-    fh.close()
+    log.info("Finished: %d files processed, %d errors, %d warnings (details in the %s sheet)%s",
+             n_processed, n_err, n_warn, DQ_LOG_SHEET, f"; FAILED: {', '.join(failed)}" if failed else "")
     folder_missing = any(r["check"] == "Input folder not found" for r in dq.rows)
     return 2 if failed or folder_missing else 0
 
@@ -1677,7 +1661,7 @@ def parse_args(argv: list[str] | None = None) -> Config:
     p.add_argument("--files-only", action="store_true",
                    help="Ignore the folders set at the top of the script; process only the files given")
     p.add_argument("--reprocess-all", action="store_true",
-                   help="Process every file in the folders again, even if processed before")
+                   help="Process every file in the folders again, even if processed before (no duplicates)")
     p.add_argument("--output-dir", type=Path, default=cfg.output_dir)
     p.add_argument("--output-name", default=cfg.output_workbook_name)
     p.add_argument("--skill", default=cfg.target_skill)
